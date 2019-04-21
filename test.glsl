@@ -14,18 +14,45 @@ float plot(vec2 st, float pct){
 }
 
 void main() {
-    vec2 st = gl_FragCoord.xy/u_resolution;
+
+	vec3 c;
+	float l;
+    float z = u_time;
+
+	for(int i=0;i<3;i++) {
+
+		vec2 uv;
+        vec2 st = gl_FragCoord.xy/u_resolution;
+		
+        uv=st;
+		
+        st-=.5;
+		
+        st.x *= u_resolution.y/u_resolution.x;
+		
+        z+=.07;
+		
+        l=length(st);
+		
+        uv += st / l*(sin(z)+1.)*abs(sin(l*9.-z*2.));
+		
+        c[i]=.01/length(abs(mod(uv,1.)-.5));
+	}
+
+	gl_FragColor=vec4(c/l,u_time);
+
+    // vec2 st = gl_FragCoord.xy/u_resolution;
 
     //float y = pow(st.x,5.0);
     //float y = step(0.5,st.x);
     //float y = smoothstep(0.1,0.9,st.x);
-    float y = smoothstep(0.2,0.5,st.x) - smoothstep(0.5,0.8,st.x);
-    vec3 color = vec3(y);
+    // float y = smoothstep(0.2,0.5,st.x) - smoothstep(0.5,0.8,st.x);
+    // vec3 color = vec3(y);
 
-    float pct = plot(st,y);
-    color = (1.0-pct)*color+pct*vec3(0.0,1.0,0.0);
+    // float pct = plot(st,y);
+    // color = (1.0-pct)*color+pct*vec3(0.1569, 0.5922, 0.7255);
 
-    gl_FragColor = vec4(color,1.0);
+    // gl_FragColor = vec4(color,1.0);
 }
 
 //y = mod(x,0.5); // return x modulo of 0.5
