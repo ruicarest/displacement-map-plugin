@@ -3,37 +3,35 @@ precision mediump float;
 #endif
 
 #define PI 3.14159265359
+#define TWO_PI 6.28318530718
 
 uniform vec2 u_resolution;  // Canvas size (width,height)
 uniform vec2 u_mouse;       // mouse position in screen pixels
 uniform float u_time;       // Time in seconds since load
 
-vec3 colorA = vec3(0.2549, 0.1373, 0.9059);
-vec3 colorB = vec3(0.9137, 0.1922, 0.0667);
-
-float plot (vec2 st, float pct){
-  return  smoothstep( pct-0.01, pct, st.y) -
-          smoothstep( pct, pct+0.01, st.y);
+//  Function from Iñigo Quiles
+//  https://www.shadertoy.com/view/MsS3Wc
+vec3 hsb2rgb( in vec3 c ){
+    vec3 rgb = clamp(abs(mod(c.x*6.0+vec3(0.0,4.0,2.0),
+                             6.0)-3.0)-1.0,
+                     0.0,
+                     1.0 );
+    rgb = rgb*rgb*(3.0-2.0*rgb);
+    return c.z * mix(vec3(1.0), rgb, c.y);
 }
 
-void main() {
-
-    vec2 st = gl_FragCoord.xy/u_resolution.xy;
+void main(){
+    vec2 st = gl_FragCoord.xy/u_resolution;
     vec3 color = vec3(0.0);
 
-    vec3 pct = vec3(st.x);
+    // Use polar coordinates instead of cartesian
+    vec2 toCenter = vec2(0.5)-st;
+    float angle = sin(u_time*atan(toCenter.y,toCenter.x));
+    float radius = sin(length(toCenter)*2.0);
 
-    //pct.r = smoothstep(0.0,1.0, st.x);
-    //pct.g = abs(cos(0.2));
-    //pct.r = abs(sin(u_time*0.2));
-    pct.b = abs(sin(u_time*0.4));
-
-    color = mix(colorA, colorB, step(pct.x, pct.y);
-
-    // Plot transition lines for each channel
-    color = mix(color,vec3(1.0,0.0,0.0),plot(st,pct.r));
-    color = mix(color,vec3(0.0, 1.0, 0.0),plot(st,pct.g));
-    color = mix(color,vec3(0.0,0.0,1.0),plot(st,pct.b));
+    // We map x (0.0 - 1.0) to the hue (0.0 - 1.0)
+    // And the y (0.0 - 1.0) to the brightness
+    color = hsb2rgb(vec3((angle/TWO_PI)+0.5,radius,1.0));
 
     gl_FragColor = vec4(color,1.0);
 }
