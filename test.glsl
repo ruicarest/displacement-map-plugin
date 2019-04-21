@@ -8,57 +8,34 @@ uniform vec2 u_resolution;  // Canvas size (width,height)
 uniform vec2 u_mouse;       // mouse position in screen pixels
 uniform float u_time;       // Time in seconds since load
 
-float plot(vec2 st, float pct){
-  return  smoothstep( pct-0.02, pct, st.y) -
-          smoothstep( pct, pct+0.02, st.y);
+vec3 colorA = vec3(0.2549, 0.1373, 0.9059);
+vec3 colorB = vec3(0.9137, 0.1922, 0.0667);
+
+float plot (vec2 st, float pct){
+  return  smoothstep( pct-0.01, pct, st.y) -
+          smoothstep( pct, pct+0.01, st.y);
 }
 
 void main() {
 
-	vec3 c;
-	float l;
-    float z = u_time;
+    vec2 st = gl_FragCoord.xy/u_resolution.xy;
+    vec3 color = vec3(0.0);
 
-	for(int i=0;i<3;i++) {
+    vec3 pct = vec3(st.x);
 
-        vec2 st = gl_FragCoord.xy/u_resolution;
-        
-        c[i] = sin(4.00*z)/-z + st.x * 0.5;
-        c[i] *= 60.0;
-        z+=.07;
-		
-        // vec2 uv;
-        // vec2 st = gl_FragCoord.xy/u_resolution;
-		
-        // uv=st;
-		
-        // st-=.5;
-		
-        // st.x *= u_resolution.y/u_resolution.x;
-		
-        // z+=.07;
-		
-        // l=length(st);
-		
-        // uv += st / l*(sin(z)+1.)*abs(sin(l*9.-z*2.));
-		
-        // c[i]=.01/length(abs(mod(uv,1.)-.5));
-	}
+    //pct.r = smoothstep(0.0,1.0, st.x);
+    //pct.g = abs(cos(0.2));
+    //pct.r = abs(sin(u_time*0.2));
+    pct.b = abs(sin(u_time*0.4));
 
-	gl_FragColor=vec4(c/l,u_time);
+    color = mix(colorA, colorB, step(pct.x, pct.y);
 
-    // vec2 st = gl_FragCoord.xy/u_resolution;
+    // Plot transition lines for each channel
+    color = mix(color,vec3(1.0,0.0,0.0),plot(st,pct.r));
+    color = mix(color,vec3(0.0, 1.0, 0.0),plot(st,pct.g));
+    color = mix(color,vec3(0.0,0.0,1.0),plot(st,pct.b));
 
-    //float y = pow(st.x,5.0);
-    //float y = step(0.5,st.x);
-    //float y = smoothstep(0.1,0.9,st.x);
-    // float y = smoothstep(0.2,0.5,st.x) - smoothstep(0.5,0.8,st.x);
-    // vec3 color = vec3(y);
-
-    // float pct = plot(st,y);
-    // color = (1.0-pct)*color+pct*vec3(0.1569, 0.5922, 0.7255);
-
-    // gl_FragColor = vec4(color,1.0);
+    gl_FragColor = vec4(color,1.0);
 }
 
 //y = mod(x,0.5); // return x modulo of 0.5
