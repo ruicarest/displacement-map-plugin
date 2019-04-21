@@ -21,22 +21,28 @@ void main() {
 
 	for(int i=0;i<3;i++) {
 
-		vec2 uv;
         vec2 st = gl_FragCoord.xy/u_resolution;
-		
-        uv=st;
-		
-        st-=.5;
-		
-        st.x *= u_resolution.y/u_resolution.x;
-		
+        
+        c[i] = sin(4.00*z)/-z + st.x * 0.5;
+        c[i] *= 60.0;
         z+=.07;
 		
-        l=length(st);
+        // vec2 uv;
+        // vec2 st = gl_FragCoord.xy/u_resolution;
 		
-        uv += st / l*(sin(z)+1.)*abs(sin(l*9.-z*2.));
+        // uv=st;
 		
-        c[i]=.01/length(abs(mod(uv,1.)-.5));
+        // st-=.5;
+		
+        // st.x *= u_resolution.y/u_resolution.x;
+		
+        // z+=.07;
+		
+        // l=length(st);
+		
+        // uv += st / l*(sin(z)+1.)*abs(sin(l*9.-z*2.));
+		
+        // c[i]=.01/length(abs(mod(uv,1.)-.5));
 	}
 
 	gl_FragColor=vec4(c/l,u_time);
