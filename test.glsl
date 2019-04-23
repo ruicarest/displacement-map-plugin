@@ -34,6 +34,26 @@ vec3 DrawRecOutline ( in float a, in float b, in vec2 st, in vec3 color ) {
 }
 
 
+vec3 DrawCircle ( in float a, in float b, in float pos, in vec3 color ) {
+    
+    vec2 st = gl_FragCoord.xy/u_resolution;
+    float pct = 0.0;
+
+    //SMOOTHSTEP
+    //vec2 bl = smoothstep(a, b, st);
+    //vec2 tr = smoothstep(a, b, 1.0-st);
+    // a. The DISTANCE from the pixel to the center
+    
+    pct = distance(st,vec2(pos));
+    pct = smoothstep(a,b, pct);
+
+
+    // vec2 tl = step(vec2(0.4), st);
+    // + tl.x * tl.y
+
+    return vec3(1.0-pct*2.0) * vec3(0.6196, 0.1569, 0.1569);
+}
+
 void main(){
 	vec2 st = gl_FragCoord.xy/u_resolution;
     float pct = 0.0;
@@ -42,8 +62,8 @@ void main(){
     pct = distance(st,vec2(0.5));
 
     //TURN EVERyTHING ABOVE 0.5 WHITE and ....
-    pct = step(0.2, pct);
-    
+    //pct = step(0.2, pct);
+    pct = smoothstep(0.1,0.2, pct);
     // // b. The LENGTH of the vector
     // //    from the pixel to the center
     // vec2 toCenter = vec2(0.5)-st;
@@ -55,7 +75,8 @@ void main(){
     // pct = sqrt(tC.x*tC.x+tC.y*tC.y);
 
     //INVERT COLORS
-    vec3 color = vec3(1.0-pct*2.0);
+    vec3 color = DrawCircle(abs(sin(u_time)), 0.00001, 0.7,vec3(0.6196, 0.1569, 0.1569))
+    + DrawCircle(abs(sin(u_time)), 0.00001, 0.1,vec3(0.2431, 0.1569, 0.6157));
 
 	gl_FragColor = vec4( color, 1.0 );
 }
