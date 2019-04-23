@@ -29,30 +29,31 @@ vec3 DrawRecOutline ( in float a, in float b, in vec2 st, in vec3 color ) {
 
     // vec2 tl = step(vec2(0.4), st);
     // + tl.x * tl.y
+
     return vec3(tr.x * tr.y * bl.x * bl.y ) * color;
 }
 
 
 void main(){
-    vec2 st = gl_FragCoord.xy/u_resolution.xy;
-    vec3 color = vec3(0.0);
+	vec2 st = gl_FragCoord.xy/u_resolution;
+    float pct = 0.0;
 
-    // // bottom-left
-    // //vec2 bl = step(vec2(0.05),st);
-    // vec2 bl = smoothstep(0.05, 0.1, st);
-    // //vec2 bl = vec2(floor(st-0.9));
-    // float pct = bl.x * bl.y;
+    // a. The DISTANCE from the pixel to the center
+    pct = distance(st,vec2(0.5));
 
-    // // top-right
-    // //vec2 tr = step(vec2(0.05),1.0-st);
-    // vec2 tr = smoothstep(0.05, 0.1, 1.0-st);
-    // //vec2 tr = vec2(floor(0.1-st));
-    // pct *= tr.x * tr.y;
+    // // b. The LENGTH of the vector
+    // //    from the pixel to the center
+    // vec2 toCenter = vec2(0.5)-st;
+    // pct = length(toCenter);
 
-    color = DrawRecOutline(0.05, 0.5, st, vec3(0.9216, 0.9137, 0.9137))
-    + DrawRecOutline(0.5, 0.7, st, vec3(0.6588, 0.0745, 0.0745));
+    // // c. The SQUARE ROOT of the vector
+    // //    from the pixel to the center
+    // vec2 tC = vec2(0.5)-st;
+    // pct = sqrt(tC.x*tC.x+tC.y*tC.y);
 
-    gl_FragColor = vec4(color,1.0);
+    vec3 color = vec3(pct*2.0);
+
+	gl_FragColor = vec4( color, 1.0 );
 }
 
 //y = mod(x,0.5); // return x modulo of 0.5
