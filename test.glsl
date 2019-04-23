@@ -28,7 +28,7 @@ void main() {
     //pct.r = abs(sin(u_time*0.2));
     pct.b = abs(sin(u_time*0.4));
 
-    color = mix(colorA, colorB, step(pct.x, pct.y);
+    color = mix(colorA, colorB, step(pct.x, pct.y));
 
     // Plot transition lines for each channel
     color = mix(color,vec3(1.0,0.0,0.0),plot(st,pct.r));
