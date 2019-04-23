@@ -9,77 +9,32 @@ uniform vec2 u_resolution;  // Canvas size (width,height)
 uniform vec2 u_mouse;       // mouse position in screen pixels
 uniform float u_time;       // Time in seconds since load
 
-
-vec2 drawRec( in float a, in float b, in vec2 st ){
-
-vec2 outStep = smoothstep(a, b, st);
-
-return outStep;
-
-}
-
-vec3 DrawRecOutline ( in float a, in float b, in vec2 st, in vec3 color ) {
-    
-    //SMOOTHSTEP
-    //vec2 bl = smoothstep(a, b, st);
-    //vec2 tr = smoothstep(a, b, 1.0-st);
-    //STEP
-    vec2 bl = step(vec2(a),st);
-    vec2 tr = step(vec2(0.05),b-st);
-
-    // vec2 tl = step(vec2(0.4), st);
-    // + tl.x * tl.y
-
-    return vec3(tr.x * tr.y * bl.x * bl.y ) * color;
-}
-
-
-vec3 DrawCircle ( in float a, in float b, in float pos, in vec3 color ) {
-    
-    vec2 st = gl_FragCoord.xy/u_resolution;
-    float pct = 0.0;
-
-    //SMOOTHSTEP
-    //vec2 bl = smoothstep(a, b, st);
-    //vec2 tr = smoothstep(a, b, 1.0-st);
-    // a. The DISTANCE from the pixel to the center
-    
-    pct = distance(st,vec2(0.4)) + distance(st,vec2(0.6));
-    pct = pow(distance(st,vec2(0.4)), distance(st,vec2(0.6)));
-    pct = smoothstep(a,b, pct);
-
-
-    // vec2 tl = step(vec2(0.4), st);
-    // + tl.x * tl.y
-
-    return vec3(1.0-pct*2.0) * vec3(0.6196, 0.1569, 0.1569);
+float plot(vec2 st, float pct){
+  return  smoothstep( pct-0.12, pct, st.y) -
+          smoothstep( pct, pct+0.12, st.y);
 }
 
 void main(){
-	vec2 st = gl_FragCoord.xy/u_resolution;
-    float pct = 0.0;
+    vec2 st = gl_FragCoord.xy/u_resolution.xy;
+    vec3 color = vec3(0.0);
 
-    // a. The DISTANCE from the pixel to the center
-    //pct = distance(st,vec2(0.4)) * distance(st,vec2(0.6));
+    vec2 pos = vec2(0.5)-st;
 
-    //TURN EVERyTHING ABOVE 0.5 WHITE and ....
-    //pct = step(0.2, pct);
-    //pct = smoothstep(0.1,0.2, pct);
-    // // b. The LENGTH of the vector
-    // //    from the pixel to the center
-    // vec2 toCenter = vec2(0.5)-st;
-    // pct = length(toCenter);
+    float r = length(pos)*2.0 ;
+    float a = atan(pos.y,pos.x) ; //* abs(sin(u_time));
 
-    // // c. The SQUARE ROOT of the vector
-    // //    from the pixel to the center
-    // vec2 tC = vec2(0.5)-st;
-    // pct = sqrt(tC.x*tC.x+tC.y*tC.y);
+    float f = cos(a*3.);
+    //f = abs(cos(a*3.)) ;
+    //f = abs(cos(a*2.5))*.5+.3;
+    //f = abs(cos(a*12.)*sin(a*3.))*.8+.1;
+    //f = smoothstep(-.5,1., cos(a*10.))*0.2+0.5;
 
-    //INVERT COLORS
-    vec3 color = DrawCircle(abs(sin(u_time)), 0.00001, 0.7,vec3(0.6196, 0.1569, 0.1569));
-    //+ DrawCircle(abs(sin(u_time)), 0.00001, 0.1,vec3(0.2431, 0.1569, 0.6157));
+    float pct = plot(st, f);
 
-	gl_FragColor = vec4( color, 1.0 );
+
+    color = vec3( 1.-smoothstep(f,f+0.02,r) ) * pct * vec3(0.8118, 0.0, 0.0);
+
+    gl_FragColor = vec4(color, 1.0);
 }
 
 //y = mod(x,0.5); // return x modulo of 0.5
