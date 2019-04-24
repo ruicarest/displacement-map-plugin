@@ -13,10 +13,23 @@
         uniform sampler2D iChannel0;
         uniform sampler2D iChannel1;
         uniform vec2 u_resolution;
+        uniform vec2 displacement;
         uniform float u_time;       // Time in seconds since load
 
         float waveSize = 5.0;
         float amplitude = 0.04;
+
+        // All components are in the range [0…1], including hue.
+        vec3 rgb2hsv(vec3 c)
+        {
+            vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+            vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+            vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+
+            float d = q.x - min(q.w, q.y);
+            float e = 1.0e-10;
+            return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+        }
 
         void main( void ) {
 
@@ -24,21 +37,28 @@
 
             //why was this line here in the first place? (Rui)
             //uv.y = 1.0-uv.y; //Flip image vertically
-        
+
             vec4 maskColor = texture2D(iChannel1, uv);
-            float waterPower = 1.0 - (maskColor.r * maskColor.g * maskColor.b);
-        
-            float X = uv.x * waveSize+u_time;
-            float Y = uv.y * waveSize+u_time;
+
+            //convert to HSV
+            vec3 maskHSV = rgb2hsv(vec3(maskColor.r, maskColor.g, maskColor.b));
+
+            //using colors mixed
+            //float waterPower = 1.0 - (maskColor.r * maskColor.g * maskColor.b);
             
-            float Xoffset = cos(X-Y)*amplitude*cos(Y);
-            float Yoffset = sin(X+Y)*amplitude*sin(Y);
+            //value is maxed on white colors
+            float waterPower = 1.0 - maskHSV.z;
+
+            //float X = uv.x * waveSize+u_time;
+            //float Y = uv.y * waveSize+u_time;
             
-                
-            uv.x += Xoffset* waterPower;
-            uv.y += Yoffset * waterPower;
-            gl_FragColor =  texture2D(iChannel0, uv);
-            gl_FragColor.b *= (waterPower +1.0);
+            //float Xoffset = cos(X-Y)*amplitude*cos(Y);
+            //float Yoffset = sin(X+Y)*amplitude*sin(Y);
+            
+            //uv.x += Xoffset* waterPower;
+            //uv.y += Yoffset * waterPower;
+            gl_FragColor =  texture2D(iChannel0, uv + vec2(waterPower)*displacement );
+            gl_FragColor.b *= (waterPower + 1.0);
           
          }
     </script>
@@ -60,16 +80,24 @@
 
             var geometry = new THREE.PlaneBufferGeometry( 2, 2 );
 
-            //cant load images locally 
-            var maskImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/mask.png" );            
+            //cant load images locally  https://i.ibb.co/kGF0sMW/Untitled.png
+            //var maskImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/mask.png" );            
+            //half image
+            //var maskImage = new THREE.TextureLoader().load( "https://i.ibb.co/kGF0sMW/Untitled.png" );
+            //1/3 image  
+            var maskImage = new THREE.TextureLoader().load( "https://i.ibb.co/FJWXGCt/layer-v1.png" );  
             var gameImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/game_screenshot.png" );
             
             uniforms = {
                 u_time: { type: "1f", value: 0 },
                 u_resolution :{type:'v2', value:new THREE.Vector2()},
+                displacement :{type :'v2', value:new THREE.Vector2()},
                 iChannel0 :{type:'sampler2D', value:gameImage},
                 iChannel1 :{type:'sampler2D', value:maskImage}
             };
+
+            uniforms.displacement.value.x = 0.5;
+            uniforms.displacement.value.y = 0.5;
 
             var material = new THREE.ShaderMaterial( {
                 uniforms: uniforms,
