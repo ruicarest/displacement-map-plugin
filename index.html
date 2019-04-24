@@ -7,13 +7,40 @@
         }
     </script>
     <script id="fragmentShader" type="x-shader/x-fragment">
-        uniform vec2 u_resolution;
-        uniform float u_time;
+        //Define the precision
+        precision mediump float;
 
-        void main() {
-            vec2 st = gl_FragCoord.xy/u_resolution.xy;
-            gl_FragColor=vec4(st.x,st.y,0.0,1.0);
-        }
+        uniform sampler2D iChannel0;
+        uniform sampler2D iChannel1;
+        uniform vec2 u_resolution;
+        uniform float u_time;       // Time in seconds since load
+
+        float waveSize = 5.0;
+        float amplitude = 0.04;
+
+        void main( void ) {
+
+            vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+
+            //why was this line here in the first place? (Rui)
+            //uv.y = 1.0-uv.y; //Flip image vertically
+        
+            vec4 maskColor = texture2D(iChannel1, uv);
+            float waterPower = 1.0 - (maskColor.r * maskColor.g * maskColor.b);
+        
+            float X = uv.x * waveSize+u_time;
+            float Y = uv.y * waveSize+u_time;
+            
+            float Xoffset = cos(X-Y)*amplitude*cos(Y);
+            float Yoffset = sin(X+Y)*amplitude*sin(Y);
+            
+                
+            uv.x += Xoffset* waterPower;
+            uv.y += Yoffset * waterPower;
+            gl_FragColor =  texture2D(iChannel0, uv);
+            gl_FragColor.b *= (waterPower +1.0);
+          
+         }
     </script>
     <script>
         var container;
@@ -33,17 +60,25 @@
 
             var geometry = new THREE.PlaneBufferGeometry( 2, 2 );
 
+            //cant load images locally 
+            var maskImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/mask.png" );            
+            var gameImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/game_screenshot.png" );
+            
             uniforms = {
-                u_time: { type: "f", value: 1.0 },
-                u_resolution: { type: "v2", value: new THREE.Vector2() },
-                u_mouse: { type: "v2", value: new THREE.Vector2() }
+                u_time: { type: "1f", value: 0 },
+                u_resolution :{type:'v2', value:new THREE.Vector2()},
+                iChannel0 :{type:'sampler2D', value:gameImage},
+                iChannel1 :{type:'sampler2D', value:maskImage}
             };
 
             var material = new THREE.ShaderMaterial( {
                 uniforms: uniforms,
-                vertexShader: document.getElementById( 'vertexShader' ).textContent,
-                fragmentShader: document.getElementById( 'fragmentShader' ).textContent
+                //vertexShader: document.getElementById( 'vertexShader' ).textContent, //vertex
+                fragmentShader: document.getElementById( 'fragmentShader' ).textContent //pixel
             } );
+
+            //testing purpose
+            //var material = new THREE.MeshBasicMaterial ( { map: gameImage});
 
             var mesh = new THREE.Mesh( geometry, material );
             scene.add( mesh );
@@ -56,10 +91,10 @@
             onWindowResize();
             window.addEventListener( 'resize', onWindowResize, false );
 
-            document.onmousemove = function(e){
-              uniforms.u_mouse.value.x = e.pageX
-              uniforms.u_mouse.value.y = e.pageY
-            }
+            // document.onmousemove = function(e){
+            //   uniforms.u_mouse.value.x = e.pageX
+            //   uniforms.u_mouse.value.y = e.pageY
+            // }
         }
 
         function onWindowResize( event ) {
