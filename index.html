@@ -43,9 +43,8 @@
 
             float waterPower = 1.0 - maskHSV.z;
 
-            gl_FragColor =  texture2D(iChannel0, uv + vec2(waterPower)*displacement );
-          
-         }
+            gl_FragColor =  texture2D(iChannel0, uv + vec2(waterPower-0.5)*displacement );          
+        }
     </script>
     <script>
 
