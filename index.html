@@ -36,30 +36,14 @@
 
             vec2 uv = gl_FragCoord.xy / u_resolution.xy;
 
-            //why was this line here in the first place? (Rui)
-            //uv.y = 1.0-uv.y; //Flip image vertically
-
             vec4 maskColor = texture2D(iChannel1, uv);
 
             //convert to HSV
             vec3 maskHSV = rgb2hsv(vec3(maskColor.r, maskColor.g, maskColor.b));
 
-            //using colors mixed
-            //float waterPower = 1.0 - (maskColor.r * maskColor.g * maskColor.b);
-            
-            //value is maxed on white colors
             float waterPower = 1.0 - maskHSV.z;
 
-            //float X = uv.x * waveSize+u_time;
-            //float Y = uv.y * waveSize+u_time;
-            
-            //float Xoffset = cos(X-Y)*amplitude*cos(Y);
-            //float Yoffset = sin(X+Y)*amplitude*sin(Y);
-            
-            //uv.x += Xoffset* waterPower;
-            //uv.y += Yoffset * waterPower;
             gl_FragColor =  texture2D(iChannel0, uv + vec2(waterPower)*displacement );
-            //gl_FragColor.b *= (waterPower + 1.0);
           
          }
     </script>
@@ -68,11 +52,8 @@
         var FizzyText = function() {
             this.MaxHorizontalDisplacement = 0.1;
             this.MaxVerticalDisplacement = 0.1;
-        };
-
-        window.onload = function() {
-            gui.add(text, 'MaxHorizontalDisplacement', -1.0, 1.0);
-            gui.add(text, 'MaxVerticalDisplacement', -1.0, 1.0);
+            this.imageURL = "https://i.ibb.co/rQkhD97/0.jpg";
+            this.DisplacementMapLayer = "https://i.ibb.co/FJWXGCt/layer-v1.png";
         };
 
         var container;
@@ -80,9 +61,27 @@
         var uniforms;
         var text = new FizzyText();
         var gui = new dat.GUI();
+        var maskImage, gameImage;
 
         init();
         animate();
+
+        window.onload = function() {
+            gui.add(text, 'imageURL').onChange(function(value) {
+                gameImage = new THREE.TextureLoader().load(text.imageURL, (texture) => { 
+                    uniforms.iChannel0.value = texture;
+                    uniforms.iChannel0.needsUpdate = true;
+                });
+            });
+            gui.add(text, 'DisplacementMapLayer').onChange(function(value) {
+                maskImage = new THREE.TextureLoader().load(text.DisplacementMapLayer, (texture) => { 
+                    uniforms.iChannel1.value = texture;
+                    uniforms.iChannel1.needsUpdate = true;
+                });
+            });
+            gui.add(text, 'MaxHorizontalDisplacement', -1.0, 1.0);
+            gui.add(text, 'MaxVerticalDisplacement', -1.0, 1.0);
+        };
 
         function init() {
             container = document.getElementById( 'container' );
@@ -99,11 +98,12 @@
             //HALF IMAGE
             //var maskImage = new THREE.TextureLoader().load( "https://i.ibb.co/kGF0sMW/Untitled.png" );
             //1/3 IMAGE  
-            var maskImage = new THREE.TextureLoader().load( "https://i.ibb.co/FJWXGCt/layer-v1.png" );  
+            maskImage = new THREE.TextureLoader().load( text.DisplacementMapLayer );  
             //ORIGINAL
             //var gameImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/game_screenshot.png" );
             //1ST USED IMAGE
-            var gameImage = new THREE.TextureLoader().load( "https://i.ibb.co/rQkhD97/0.jpg" );
+            gameImage = new THREE.TextureLoader().load( text.imageURL );
+            //MAN IMAGE https://i.ibb.co/h1pZRzR/Capture.png
             uniforms = {
                 u_time: { type: "1f", value: 0 },
                 u_resolution :{type:'v2', value:new THREE.Vector2()},
