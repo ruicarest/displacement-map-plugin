@@ -33,6 +33,9 @@
 
         void main( void ) {
 
+            float xHelper = 1.0;
+            float yHelper = 1.0;
+
             vec2 uv = gl_FragCoord.xy / u_resolution.xy;
             vec4 maskColor = texture2D(iChannel1, uv);
 
@@ -45,7 +48,16 @@
             vec2 lastPos = uv + vec2(brightness-0.5)*u_displacement;
             
             if(u_wrapPixelsAround) {
-                gl_FragColor =  texture2D(iChannel0, fract(lastPos));
+                if(fract(lastPos.x) == 0.0) {
+                    yHelper = 0.0;
+                }
+                if (fract(lastPos.y) == 0.0) {
+                    xHelper = 0.0;
+                }
+                gl_FragColor =  texture2D(iChannel0, vec2(fract(lastPos.x)*xHelper, fract(lastPos.y)*yHelper));
+                xHelper = 1.0;
+                yHelper = 1.0;
+    
             } else {
                 //if pixel is outside original image, paint it black
                 if(lastPos.x > 1.0 || lastPos.x < 0.0 || lastPos.y > 1.0 ||  lastPos.y < 0.0) {
