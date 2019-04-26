@@ -47,13 +47,13 @@
             if(u_wrapPixelsAround) {
                 gl_FragColor =  texture2D(iChannel0, fract(lastPos));
             } else {
+                //if pixel is outside original image, paint it black
                 if(lastPos.x > 1.0 || lastPos.x < 0.0 || lastPos.y > 1.0 ||  lastPos.y < 0.0) {
                     gl_FragColor = vec4(0.0);
                 } else {
                     gl_FragColor =  texture2D(iChannel0, uv + vec2(brightness-0.5)*u_displacement );
                 }
             }
-
         }
     </script>
     <script>
