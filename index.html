@@ -17,8 +17,6 @@
         uniform vec2 displacement;
         uniform float u_time;       // Time in seconds since load
 
-        float waveSize = 5.0;
-        float amplitude = 0.04;
 
         // All components are in the range [0…1], including hue.
         vec3 rgb2hsv(vec3 c)
@@ -35,15 +33,21 @@
         void main( void ) {
 
             vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-
             vec4 maskColor = texture2D(iChannel1, uv);
 
             //convert to HSV
             vec3 maskHSV = rgb2hsv(vec3(maskColor.r, maskColor.g, maskColor.b));
 
-            float waterPower = 1.0 - maskHSV.z;
-
-            gl_FragColor =  texture2D(iChannel0, uv + vec2(waterPower-0.5)*displacement );          
+            float brightness = 1.0 - maskHSV.z;
+            
+            //calculate pixel-to-mimic position
+            vec2 lastPos = uv + vec2(brightness-0.5)*displacement;
+            
+            if(lastPos.x > 1.0 || lastPos.x < 0.0 || lastPos.y > 1.0 ||  lastPos.y < 0.0) {
+                gl_FragColor = vec4(0.0);
+            } else {
+                gl_FragColor =  texture2D(iChannel0, uv + vec2(brightness-0.5)*displacement );
+            }
         }
     </script>
     <script>
