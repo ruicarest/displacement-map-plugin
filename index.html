@@ -48,8 +48,8 @@
 
         void main( void ) {
 
-            vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-            vec4 maskColor = texture2D(iChannel1, uv);
+            vec2 screenUV = gl_FragCoord.xy / u_resolution.xy;
+            vec4 maskColor = texture2D(iChannel1,  screenUV,1.0);
 
             //convert to HSV
             vec3 maskHSV = rgb2hsv(vec3(maskColor.r, maskColor.g, maskColor.b));
@@ -57,23 +57,31 @@
             float brightness = 1.0 - maskHSV.z;
             
             //calculate pixel-to-mimic position
-            vec2 lastPos = uv + vec2(brightness-0.5)*u_displacement;
+            vec2 texturePositionToUse =  screenUV + vec2(brightness-0.5)*u_displacement;
+
+            bool pixelOutsideImage = texturePositionToUse.x > 1.0 || texturePositionToUse.x < 0.0 || texturePositionToUse.y > 1.0 ||  texturePositionToUse.y < 0.0;
             
-            if(u_wrapPixelsAround) {
-                gl_FragColor =  texture2D(iChannel0, fract(lastPos));
+            if(u_wrapPixelsAround || !pixelOutsideImage) {
+                gl_FragColor =  texture2D(iChannel0, fract(texturePositionToUse));
             } else {
                 //if pixel is outside original image, paint it black
-                if(lastPos.x > 1.0 || lastPos.x < 0.0 || lastPos.y > 1.0 ||  lastPos.y < 0.0) {
-                    gl_FragColor = vec4(0.0);
-                } else {
-                    gl_FragColor =  texture2D(iChannel0, uv + vec2(brightness-0.5)*u_displacement );
-                }
+                    gl_FragColor = vec4(0.0);                
             }
         }
     </script>
     <script>
 
-        var FizzyText = function() {
+        var loadTextureForUnifrom = (texture, uniform) => {
+            return new THREE.TextureLoader().load(texture, function (texture) {
+                uniform.value = texture;
+                uniform.needsUpdate = true;
+                texture.minFilter = THREE.NearestFilter;
+                // texture.magFilter = THREE.NearestFilter;
+                // texture.warpS = THREE.RepeatWrapping;
+                // texture.warpT = THREE.RepeatWrapping;
+            });
+        }
+        var FizzyText = function () {
             this.MaxHorizontalDisplacement = 0.1;
             this.MaxVerticalDisplacement = 0.1;
             this.imageURL = "https://i.ibb.co/rQkhD97/0.jpg";
@@ -91,18 +99,12 @@
         init();
         animate();
 
-        window.onload = function() {
-            gui.add(text, 'imageURL').onChange(function(value) {
-                gameImage = new THREE.TextureLoader().load(text.imageURL, (texture) => { 
-                    uniforms.iChannel0.value = texture;
-                    uniforms.iChannel0.needsUpdate = true;
-                });
+        window.onload = function () {
+            gui.add(text, 'imageURL').onChange(function (value) {
+                gameImage = loadTextureForUnifrom(text.imageURL, uniforms.iChannel0);
             });
-            gui.add(text, 'DisplacementMapLayer').onChange(function(value) {
-                maskImage = new THREE.TextureLoader().load(text.DisplacementMapLayer, (texture) => { 
-                    uniforms.iChannel1.value = texture;
-                    uniforms.iChannel1.needsUpdate = true;
-                });
+            gui.add(text, 'DisplacementMapLayer').onChange(function (value) {
+                maskImage = loadTextureForUnifrom(text.DisplacementMapLayer, uniforms.iChannel1);
             });
             gui.add(text, 'MaxHorizontalDisplacement', -1.0, 1.0);
             gui.add(text, 'MaxVerticalDisplacement', -1.0, 1.0);
@@ -121,28 +123,31 @@
 
             var geometry = new THREE.PlaneBufferGeometry( 2, 2 );
 
+            uniforms = {
+                u_time: { type: "1f", value: 0 },
+                u_resolution: { type: 'v2', value: new THREE.Vector2() },
+                u_displacement: { type: 'v2', value: new THREE.Vector2() },
+                u_wrapPixelsAround: { type: 'bool', value: text.wrapPixelsAround },
+                iChannel0: { type: 'sampler2D', value: null },
+                iChannel1: { type: 'sampler2D', value: null }
+            };
+
+            uniforms.u_displacement.value.x = 0.1;
+            uniforms.u_displacement.value.y = 0.1;
+
             //cant load images locally  https://i.ibb.co/kGF0sMW/Untitled.png
             //var maskImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/mask.png" );            
             //HALF IMAGE
             //var maskImage = new THREE.TextureLoader().load( "https://i.ibb.co/kGF0sMW/Untitled.png" );
             //1/3 IMAGE  
-            maskImage = new THREE.TextureLoader().load( text.DisplacementMapLayer );  
+            maskImage = loadTextureForUnifrom(text.DisplacementMapLayer, uniforms.iChannel1);
             //ORIGINAL
             //var gameImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/game_screenshot.png" );
             //1ST USED IMAGE
-            gameImage = new THREE.TextureLoader().load( text.imageURL );
+            gameImage = loadTextureForUnifrom(text.imageURL, uniforms.iChannel0);
             //MAN IMAGE https://i.ibb.co/h1pZRzR/Capture.png
-            uniforms = {
-                u_time: { type: "1f", value: 0 },
-                u_resolution :{type:'v2', value:new THREE.Vector2()},
-                u_displacement :{type :'v2', value:new THREE.Vector2()},
-                u_wrapPixelsAround :{type: 'bool', value: false},
-                iChannel0 :{type:'sampler2D', value:gameImage},
-                iChannel1 :{type:'sampler2D', value:maskImage}
-            };
 
-            uniforms.u_displacement.value.x = 0.1;
-            uniforms.u_displacement.value.y = 0.1;
+
 
             var material = new THREE.ShaderMaterial( {
                 uniforms: uniforms,
