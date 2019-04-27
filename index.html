@@ -1,3 +1,18 @@
+<!DOCTYPE html>
+
+<head>
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
 <body>
     <div id="container"></div>
     <script src="js/three.min.js"></script>
@@ -14,11 +29,10 @@
         uniform sampler2D iChannel0;
         uniform sampler2D iChannel1;
         uniform vec2 u_resolution;
-        uniform vec2 displacement;
+        uniform vec2 u_displacement;
         uniform float u_time;       // Time in seconds since load
+        uniform bool u_wrapPixelsAround;
 
-        float waveSize = 5.0;
-        float amplitude = 0.04;
 
         // All components are in the range [0…1], including hue.
         vec3 rgb2hsv(vec3 c)
@@ -35,15 +49,26 @@
         void main( void ) {
 
             vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-
             vec4 maskColor = texture2D(iChannel1, uv);
 
             //convert to HSV
             vec3 maskHSV = rgb2hsv(vec3(maskColor.r, maskColor.g, maskColor.b));
 
-            float waterPower = 1.0 - maskHSV.z;
-
-            gl_FragColor =  texture2D(iChannel0, uv + vec2(waterPower-0.5)*displacement );          
+            float brightness = 1.0 - maskHSV.z;
+            
+            //calculate pixel-to-mimic position
+            vec2 lastPos = uv + vec2(brightness-0.5)*u_displacement;
+            
+            if(u_wrapPixelsAround) {
+                gl_FragColor =  texture2D(iChannel0, fract(lastPos));
+            } else {
+                //if pixel is outside original image, paint it black
+                if(lastPos.x > 1.0 || lastPos.x < 0.0 || lastPos.y > 1.0 ||  lastPos.y < 0.0) {
+                    gl_FragColor = vec4(0.0);
+                } else {
+                    gl_FragColor =  texture2D(iChannel0, uv + vec2(brightness-0.5)*u_displacement );
+                }
+            }
         }
     </script>
     <script>
@@ -53,6 +78,7 @@
             this.MaxVerticalDisplacement = 0.1;
             this.imageURL = "https://i.ibb.co/rQkhD97/0.jpg";
             this.DisplacementMapLayer = "https://i.ibb.co/FJWXGCt/layer-v1.png";
+            this.wrapPixelsAround = false;
         };
 
         var container;
@@ -78,8 +104,11 @@
                     uniforms.iChannel1.needsUpdate = true;
                 });
             });
-            gui.add(text, 'MaxHorizontalDisplacement', -10.0, 10.0);
-            gui.add(text, 'MaxVerticalDisplacement', -10.0, 10.0);
+            gui.add(text, 'MaxHorizontalDisplacement', -1.0, 1.0);
+            gui.add(text, 'MaxVerticalDisplacement', -1.0, 1.0);
+            gui.add(text, 'wrapPixelsAround').onChange((value) => {
+                uniforms.u_wrapPixelsAround.value = value;
+            });
         };
 
         function init() {
@@ -106,13 +135,14 @@
             uniforms = {
                 u_time: { type: "1f", value: 0 },
                 u_resolution :{type:'v2', value:new THREE.Vector2()},
-                displacement :{type :'v2', value:new THREE.Vector2()},
+                u_displacement :{type :'v2', value:new THREE.Vector2()},
+                u_wrapPixelsAround :{type: 'bool', value: false},
                 iChannel0 :{type:'sampler2D', value:gameImage},
                 iChannel1 :{type:'sampler2D', value:maskImage}
             };
 
-            uniforms.displacement.value.x = 0.1;
-            uniforms.displacement.value.y = 0.1;
+            uniforms.u_displacement.value.x = 0.1;
+            uniforms.u_displacement.value.y = 0.1;
 
             var material = new THREE.ShaderMaterial( {
                 uniforms: uniforms,
@@ -136,8 +166,8 @@
 
         }
 
-        function onWindowResize( event ) {
-            renderer.setSize( window.innerWidth, window.innerHeight );
+        function onWindowResize(event) {
+            renderer.setSize(window.innerWidth, window.innerHeight);
             uniforms.u_resolution.value.x = renderer.domElement.width;
             uniforms.u_resolution.value.y = renderer.domElement.height;
         }
@@ -148,8 +178,8 @@
         }
 
         function render() {
-            uniforms.displacement.value.x = text.MaxHorizontalDisplacement;
-            uniforms.displacement.value.y = text.MaxVerticalDisplacement;
+            uniforms.u_displacement.value.x = text.MaxHorizontalDisplacement;
+            uniforms.u_displacement.value.y = text.MaxVerticalDisplacement;
             uniforms.u_time.value += 0.05;
             renderer.render( scene, camera );
         }
