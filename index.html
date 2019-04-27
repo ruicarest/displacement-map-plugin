@@ -75,6 +75,10 @@
             return new THREE.TextureLoader().load(texture, function (texture) {
                 uniform.value = texture;
                 uniform.needsUpdate = true;
+                texture.minFilter = THREE.NearestFilter;
+                // texture.magFilter = THREE.NearestFilter;
+                // texture.warpS = THREE.RepeatWrapping;
+                // texture.warpT = THREE.RepeatWrapping;
             });
         }
         var FizzyText = function () {
