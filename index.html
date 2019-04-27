@@ -15,6 +15,9 @@
 
 <body>
     <div id="container"></div>
+    <video id="video" loop crossOrigin="anonymous" webkit-playsinline style="display:none">
+      <source src="https://vjs.zencdn.net/v/oceans.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'>
+    </video>
     <script src="js/three.min.js"></script>
     <script src="js/dat.gui.min.js"></script>
     <script id="vertexShader" type="x-shader/x-vertex">
@@ -89,12 +92,15 @@
             this.wrapPixelsAround = false;
         };
 
-        var container;
+        var container, video;
         var camera, scene, renderer;
         var uniforms;
         var effectControls = new EffectControls();
         var gui = new dat.GUI();
         var maskImage, gameImage;
+        var cube_count,
+        	meshes = [],
+			materials = [];
 
         init();
         animate();
@@ -135,6 +141,7 @@
             uniforms.u_displacement.value.x = 0.1;
             uniforms.u_displacement.value.y = 0.1;
 
+            //https://codepen.io/Grooo/pen/dRXQPq -> vídeo example
             //cant load images locally  https://i.ibb.co/kGF0sMW/Untitled.png
             //var maskImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/mask.png" );            
             //HALF IMAGE
@@ -145,6 +152,17 @@
             //var gameImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/game_screenshot.png" );
             //1ST USED IMAGE
             gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
+            //gameImage = new THREE.TextureLoader().load( text.imageURL );
+
+            video = document.getElementById( 'video' );
+		    video.play();
+
+            gameImage = new THREE.VideoTexture(video);
+
+            // gameImage.minFilter = THREE.LinearFilter;
+            // gameImage.magFilter = THREE.LinearFilter;
+            // gameImage.format = THREE.RGBFormat;
+
             //MAN IMAGE https://i.ibb.co/h1pZRzR/Capture.png
 
 
@@ -177,8 +195,25 @@
             uniforms.u_resolution.value.y = renderer.domElement.height;
         }
 
+        var fps = 30;
+        var now;
+        var then = Date.now();
+        var interval = 1000/fps;
+        var delta;
+
         function animate() {
             requestAnimationFrame( animate );
+
+            now = Date.now();
+            delta = now - then;
+     
+            if (delta > interval) {
+                console.log("frame");
+                then = now - (delta % interval);
+                // uniforms.iChannel0.vale = gameImage;
+                // uniforms.iChannel0.needsUpdate = true;
+            }
+
             render();
         }
 
