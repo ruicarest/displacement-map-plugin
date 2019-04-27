@@ -206,12 +206,12 @@
 
             now = Date.now();
             delta = now - then;
-     
+
             if (delta > interval) {
                 console.log("frame");
                 then = now - (delta % interval);
-                // uniforms.iChannel0.vale = gameImage;
-                // uniforms.iChannel0.needsUpdate = true;
+                uniforms.iChannel1.value = gameImage;
+                uniforms.iChannel1.needsUpdate = true;
             }
 
             render();
