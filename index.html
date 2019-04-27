@@ -48,8 +48,8 @@
 
         void main( void ) {
 
-            vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-            vec4 maskColor = texture2D(iChannel1, uv);
+            vec2 screenUV = gl_FragCoord.xy / u_resolution.xy;
+            vec4 maskColor = texture2D(iChannel1,  screenUV,1.0);
 
             //convert to HSV
             vec3 maskHSV = rgb2hsv(vec3(maskColor.r, maskColor.g, maskColor.b));
@@ -57,17 +57,15 @@
             float brightness = 1.0 - maskHSV.z;
             
             //calculate pixel-to-mimic position
-            vec2 lastPos = uv + vec2(brightness-0.5)*u_displacement;
+            vec2 texturePositionToUse =  screenUV + vec2(brightness-0.5)*u_displacement;
+
+            bool pixelOutsideImage = texturePositionToUse.x > 1.0 || texturePositionToUse.x < 0.0 || texturePositionToUse.y > 1.0 ||  texturePositionToUse.y < 0.0;
             
-            if(u_wrapPixelsAround) {
-                gl_FragColor =  texture2D(iChannel0, fract(lastPos));
+            if(u_wrapPixelsAround || !pixelOutsideImage) {
+                gl_FragColor =  texture2D(iChannel0, fract(texturePositionToUse));
             } else {
                 //if pixel is outside original image, paint it black
-                if(lastPos.x > 1.0 || lastPos.x < 0.0 || lastPos.y > 1.0 ||  lastPos.y < 0.0) {
-                    gl_FragColor = vec4(0.0);
-                } else {
-                    gl_FragColor =  texture2D(iChannel0, uv + vec2(brightness-0.5)*u_displacement );
-                }
+                    gl_FragColor = vec4(0.0);                
             }
         }
     </script>
