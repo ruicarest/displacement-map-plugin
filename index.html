@@ -97,7 +97,7 @@
         };
 
         var container;
-        var video, playPromise; 
+        var videoElement, playPromise; 
         var videoPlaying = false;
         var camera, scene, renderer;
         var uniforms;
@@ -177,8 +177,8 @@
             //gameImage = new THREE.TextureLoader().load( text.imageURL );
             //MAN IMAGE https://i.ibb.co/h1pZRzR/Capture.png
 
-            playPromise = document.querySelector('video').play();
-            video = document.getElementById('video');
+            videoElement = document.getElementById('video');
+            playPromise = videoElement.play();
 
             var material = new THREE.ShaderMaterial( {
                 uniforms: uniforms,
@@ -223,12 +223,12 @@
             if (playPromise !== undefined && !videoPlaying) {            
                 playPromise.then(function() {
                     videoPlaying = true;
-                    video.play();
+                    videoElement.play();
                     if(effectControls.videoAsImage) {
-                        gameImage = new THREE.VideoTexture(video);
+                        gameImage = new THREE.VideoTexture(videoElement);
                     }
                     if(effectControls.videoAsMask) {
-                        maskImage = new THREE.VideoTexture(video);
+                        maskImage = new THREE.VideoTexture(videoElement);
                     }
                 }).catch(function(error) {
                     //TODO: add an UI to manual playing
