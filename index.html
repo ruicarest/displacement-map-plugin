@@ -92,6 +92,8 @@
             this.imageURL = "https://i.ibb.co/rQkhD97/0.jpg";
             this.DisplacementMapLayer = "https://i.ibb.co/FJWXGCt/layer-v1.png";
             this.wrapPixelsAround = false;
+            this.videoAsMask = false;
+            this.videoAsImage = false;
         };
 
         var container;
@@ -117,6 +119,25 @@
             gui.add(effectControls, 'MaxVerticalDisplacement', -1.0, 1.0);
             gui.add(effectControls, 'wrapPixelsAround').onChange((value) => {
                 uniforms.u_wrapPixelsAround.value = value;
+            });
+
+            var f1 = gui.addFolder('Video');
+            
+            f1.add(effectControls, 'videoAsMask').onChange((value) => {
+                //uniforms.videoAsMask.value = value;
+                if(value == false) {
+                    maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1);
+                } else {
+                    videoPlaying = false;
+                }
+            });
+            f1.add(effectControls, 'videoAsImage').onChange((value) => {
+                //uniforms.videoAsImage.value = value;
+                if(value == false) {
+                    gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
+                } else {
+                    videoPlaying = false;
+                }
             });
         };
 
@@ -203,7 +224,12 @@
                 playPromise.then(function() {
                     videoPlaying = true;
                     video.play();
-                    gameImage = new THREE.VideoTexture(video);
+                    if(effectControls.videoAsImage) {
+                        gameImage = new THREE.VideoTexture(video);
+                    }
+                    if(effectControls.videoAsMask) {
+                        maskImage = new THREE.VideoTexture(video);
+                    }
                 }).catch(function(error) {
                     //TODO: add an UI to manual playing
                     console.log("play not ready");
@@ -213,8 +239,17 @@
             if (delta > interval) {
                 //console.log("frame");
                 then = now - (delta % interval);
-                uniforms.iChannel1.value = gameImage;
-                uniforms.iChannel1.needsUpdate = true;
+                
+                if(videoPlaying) {
+                    if(effectControls.videoAsImage) {
+                        uniforms.iChannel0.value = gameImage;
+                        uniforms.iChannel0.needsUpdate = true;
+                    }
+                    if(effectControls.videoAsMask) {
+                        uniforms.iChannel1.value = maskImage;
+                        uniforms.iChannel1.needsUpdate = true;
+                    }
+                }
             }
 
             render();
