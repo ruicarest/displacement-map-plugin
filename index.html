@@ -15,7 +15,9 @@
 
 <body>
     <div id="container"></div>
-    <video id="video" loop crossOrigin="anonymous" webkit-playsinline style="display:none">
+    <video id="video" loop crossOrigin="anonymous" webkit-playsinline style="display:none"
+    muted="muted"
+    >
       <source src="https://vjs.zencdn.net/v/oceans.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'>
     </video>
     <script src="js/three.min.js"></script>
@@ -92,15 +94,14 @@
             this.wrapPixelsAround = false;
         };
 
-        var container, video;
+        var container;
+        var video, playPromise; 
+        var videoPlaying = false;
         var camera, scene, renderer;
         var uniforms;
         var effectControls = new EffectControls();
         var gui = new dat.GUI();
         var maskImage, gameImage;
-        var cube_count,
-        	meshes = [],
-			materials = [];
 
         init();
         animate();
@@ -153,19 +154,10 @@
             //1ST USED IMAGE
             gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
             //gameImage = new THREE.TextureLoader().load( text.imageURL );
-
-            video = document.getElementById( 'video' );
-		    video.play();
-
-            gameImage = new THREE.VideoTexture(video);
-
-            // gameImage.minFilter = THREE.LinearFilter;
-            // gameImage.magFilter = THREE.LinearFilter;
-            // gameImage.format = THREE.RGBFormat;
-
             //MAN IMAGE https://i.ibb.co/h1pZRzR/Capture.png
 
-
+            playPromise = document.querySelector('video').play();
+            video = document.getElementById('video');
 
             var material = new THREE.ShaderMaterial( {
                 uniforms: uniforms,
@@ -207,8 +199,19 @@
             now = Date.now();
             delta = now - then;
 
+            if (playPromise !== undefined && !videoPlaying) {            
+                playPromise.then(function() {
+                    videoPlaying = true;
+                    video.play();
+                    gameImage = new THREE.VideoTexture(video);
+                }).catch(function(error) {
+                    //TODO: add an UI to manual playing
+                    console.log("play not ready");
+                });
+            }
+
             if (delta > interval) {
-                console.log("frame");
+                //console.log("frame");
                 then = now - (delta % interval);
                 uniforms.iChannel1.value = gameImage;
                 uniforms.iChannel1.needsUpdate = true;
