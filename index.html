@@ -94,8 +94,8 @@
             this.wrapPixelsAround = false;
             this.videoAsMask = false;
             this.videoAsImage = false;
-            this.canvasWidth = 50;
-            this.canvasHeight = 50;
+            this.canvasWidth = 500;
+            this.canvasHeight = 500;
             this.fitCanvasToImage = false;
         };
 
@@ -133,22 +133,25 @@
                 .add(effectControls, 'canvasWidth', 10.0, 3840.0)
                 .listen()
                 .onChange((value) => {               
-                    renderer.setSize(value, renderer.height);
+                    //renderer.setSize(value, renderer.height);
+                    UpdateCanvasSize();
                     });
 
             var canvasHeightUI = f2
                 .add(effectControls, 'canvasHeight',  10.0, 2160.0)
                 .listen().onChange((value) => {
-                    renderer.setSize(renderer.width, value);
+                    //renderer.setSize(renderer.width, value);
+                    UpdateCanvasSize();
                     });
 
             f2.add(effectControls, 'fitCanvasToImage').onChange((checked) => {
                 if(checked) {
-                    renderer.setSize(gameImage.image.width, gameImage.image.height);
+                    //renderer.setSize(gameImage.image.width, gameImage.image.height);
                     effectControls.canvasHeight = gameImage.image.height;
                     effectControls.canvasWidth = gameImage.image.width;      
                     canvasHeightUI.domElement.style.pointerEvents = "none";
                     canvasWidthUI.domElement.style.pointerEvents = "none";
+                    UpdateCanvasSize();
                 }
                 else {
                     canvasHeightUI.domElement.style.pointerEvents = "auto";
@@ -230,15 +233,22 @@
 
             container.appendChild( renderer.domElement );
 
-            onWindowResize();
-            window.addEventListener( 'resize', onWindowResize, false );
-
+            UpdateCanvasSize();
+            //onWindowResize();
+            //window.addEventListener( 'resize', onWindowResize, false );
         }
 
+        //deprecated
         function onWindowResize(event) {
             renderer.setSize(window.innerWidth, window.innerHeight);
             uniforms.u_resolution.value.x = renderer.domElement.width;
             uniforms.u_resolution.value.y = renderer.domElement.height;
+        }
+
+        function UpdateCanvasSize () {
+            renderer.setSize(effectControls.canvasWidth, effectControls.canvasHeight);
+            uniforms.u_resolution.value.x = effectControls.canvasWidth;
+            uniforms.u_resolution.value.y = effectControls.canvasHeight;
         }
 
         var fps = 30;
@@ -284,7 +294,6 @@
                     }
                 }
             }
-
             render();
         }
 
