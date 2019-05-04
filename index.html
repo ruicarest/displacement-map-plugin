@@ -110,25 +110,25 @@
         animate();
 
         window.onload = function () {
-            var f3 = gui.addFolder('Shader');
-            f3.open();
-            var f1 = gui.addFolder('Video');
-            var f2 = gui.addFolder('Canvas');
-            f2.open();
+            var shaderGUI = gui.addFolder('Shader');
+            shaderGUI.open();
+            var videoGUI = gui.addFolder('Video');
+            var canvasGUI = gui.addFolder('Canvas');
+            canvasGUI.open();
 
-            f3.add(effectControls, 'DisplacementMapLayer').onChange(function (value) {
+            shaderGUI.add(effectControls, 'DisplacementMapLayer').onChange(function (value) {
                 maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1);
             });
-            f3.add(effectControls, 'imageURL').onChange(function (value) {
+            shaderGUI.add(effectControls, 'imageURL').onChange(function (value) {
                 gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
             });
-            f3.add(effectControls, 'MaxHorizontalDisplacement', -1.0, 1.0);
-            f3.add(effectControls, 'MaxVerticalDisplacement', -1.0, 1.0);
-            f3.add(effectControls, 'wrapPixelsAround').onChange((value) => {
+            shaderGUI.add(effectControls, 'MaxHorizontalDisplacement', -1.0, 1.0);
+            shaderGUI.add(effectControls, 'MaxVerticalDisplacement', -1.0, 1.0);
+            shaderGUI.add(effectControls, 'wrapPixelsAround').onChange((value) => {
                 uniforms.u_wrapPixelsAround.value = value;
             });
 
-            var canvasWidthUI = f2
+            var canvasWidthUI = canvasGUI
                 .add(effectControls, 'canvasWidth', 10.0, 3840.0)
                 .listen()
                 .onChange((value) => {               
@@ -136,14 +136,14 @@
                     UpdateCanvasSize();
                     });
 
-            var canvasHeightUI = f2
+            var canvasHeightUI = canvasGUI
                 .add(effectControls, 'canvasHeight',  10.0, 2160.0)
                 .listen().onChange((value) => {
                     //renderer.setSize(renderer.width, value);
                     UpdateCanvasSize();
                     });
 
-            f2.add(effectControls, 'fitCanvasToImage').onChange((checked) => {
+                    canvasGUI.add(effectControls, 'fitCanvasToImage').onChange((checked) => {
                 if(checked) {
                     //renderer.setSize(gameImage.image.width, gameImage.image.height);
                     effectControls.canvasHeight = gameImage.image.height;
@@ -158,7 +158,7 @@
                 }
             });
 
-            f1.add(effectControls, 'videoAsMask').onChange((value) => {
+            videoGUI.add(effectControls, 'videoAsMask').onChange((value) => {
                 //uniforms.videoAsMask.value = value;
                 if(value == false) {
                     maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1);
@@ -166,7 +166,7 @@
                     videoPlaying = false;
                 }
             });
-            f1.add(effectControls, 'videoAsImage').onChange((value) => {
+            videoGUI.add(effectControls, 'videoAsImage').onChange((value) => {
                 //uniforms.videoAsImage.value = value;
                 if(value == false) {
                     gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
