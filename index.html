@@ -132,20 +132,17 @@
                 .add(effectControls, 'canvasWidth', 10.0, 3840.0)
                 .listen()
                 .onChange((value) => {               
-                    //renderer.setSize(value, renderer.height);
                     UpdateCanvasSize();
                     });
 
             var canvasHeightUI = canvasGUI
                 .add(effectControls, 'canvasHeight',  10.0, 2160.0)
                 .listen().onChange((value) => {
-                    //renderer.setSize(renderer.width, value);
                     UpdateCanvasSize();
                     });
 
-                    canvasGUI.add(effectControls, 'fitCanvasToImage').onChange((checked) => {
+            canvasGUI.add(effectControls, 'fitCanvasToImage').onChange((checked) => {
                 if(checked) {
-                    //renderer.setSize(gameImage.image.width, gameImage.image.height);
                     effectControls.canvasHeight = gameImage.image.height;
                     effectControls.canvasWidth = gameImage.image.width;      
                     canvasHeightUI.domElement.style.pointerEvents = "none";
@@ -159,7 +156,6 @@
             });
 
             videoGUI.add(effectControls, 'videoAsMask').onChange((value) => {
-                //uniforms.videoAsMask.value = value;
                 if(value == false) {
                     maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1);
                 } else {
@@ -167,7 +163,6 @@
                 }
             });
             videoGUI.add(effectControls, 'videoAsImage').onChange((value) => {
-                //uniforms.videoAsImage.value = value;
                 if(value == false) {
                     gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
                 } else {
