@@ -32,7 +32,7 @@
         uniform vec2 u_displacement;
         uniform float u_time;       // Time in seconds since load
         uniform bool u_wrapPixelsAround;
-
+        uniform vec2 u_imageSize;
 
         // All components are in the range [0…1], including hue.
         vec3 rgb2hsv(vec3 c)
@@ -48,7 +48,8 @@
 
         void main( void ) {
 
-            vec2 screenUV = gl_FragCoord.xy / u_resolution.xy;
+            //vec2 screenUV = gl_FragCoord.xy / u_resolution.xy;
+            vec2 screenUV = gl_FragCoord.xy / u_imageSize.xy;
             vec4 maskColor = texture2D(iChannel1,  screenUV,1.0);
 
             //convert to HSV
@@ -76,6 +77,8 @@
                 uniform.value = texture;
                 uniform.needsUpdate = true;
                 texture.minFilter = THREE.NearestFilter;
+                //TODO: move it from here, affected by maskImage size
+                uniforms.u_imageSize.value = new THREE.Vector2(texture.image.width, texture.image.height);
                 // texture.magFilter = THREE.NearestFilter;
                 // texture.warpS = THREE.RepeatWrapping;
                 // texture.warpT = THREE.RepeatWrapping;
@@ -111,12 +114,13 @@
             f3.open();
             var f1 = gui.addFolder('Video');
             var f2 = gui.addFolder('Canvas');
+            f2.open();
 
-            f3.add(effectControls, 'imageURL').onChange(function (value) {
-                gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
-            });
             f3.add(effectControls, 'DisplacementMapLayer').onChange(function (value) {
                 maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1);
+            });
+            f3.add(effectControls, 'imageURL').onChange(function (value) {
+                gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
             });
             f3.add(effectControls, 'MaxHorizontalDisplacement', -1.0, 1.0);
             f3.add(effectControls, 'MaxVerticalDisplacement', -1.0, 1.0);
@@ -188,7 +192,8 @@
                 u_displacement: { type: 'v2', value: new THREE.Vector2() },
                 u_wrapPixelsAround: { type: 'bool', value: effectControls.wrapPixelsAround },
                 iChannel0: { type: 'sampler2D', value: null },
-                iChannel1: { type: 'sampler2D', value: null }
+                iChannel1: { type: 'sampler2D', value: null },
+                u_imageSize: {type: 'v2', value: new THREE.Vector2()}
             };
 
             uniforms.u_displacement.value.x = 0.1;
@@ -234,11 +239,11 @@
         }
 
         //deprecated
-        function onWindowResize(event) {
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            uniforms.u_resolution.value.x = renderer.domElement.width;
-            uniforms.u_resolution.value.y = renderer.domElement.height;
-        }
+        // function onWindowResize(event) {
+        //     renderer.setSize(window.innerWidth, window.innerHeight);
+        //     uniforms.u_resolution.value.x = renderer.domElement.width;
+        //     uniforms.u_resolution.value.y = renderer.domElement.height;
+        // }
 
         function UpdateCanvasSize () {
             renderer.setSize(effectControls.canvasWidth, effectControls.canvasHeight);
