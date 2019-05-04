@@ -52,7 +52,7 @@
             //vec2 screenUV = gl_FragCoord.xy / u_resolution.xy;
             //keep image original size
             vec2 screenUV = gl_FragCoord.xy / u_imageSize.xy;
-            vec4 maskColor = texture2D(iChannel1,  screenUV,1.0);
+            vec4 maskColor = texture2D(iChannel1,  screenUV*u_imageScale, 1.0);
 
             //convert to HSV
             vec3 maskHSV = rgb2hsv(vec3(maskColor.r, maskColor.g, maskColor.b));
