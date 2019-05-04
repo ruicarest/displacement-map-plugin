@@ -33,6 +33,7 @@
         uniform float u_time;       // Time in seconds since load
         uniform bool u_wrapPixelsAround;
         uniform vec2 u_imageSize;
+        uniform float u_imageScale;
 
         // All components are in the range [0…1], including hue.
         vec3 rgb2hsv(vec3 c)
@@ -47,8 +48,9 @@
         }
 
         void main( void ) {
-
+            //stretch image to canvas
             //vec2 screenUV = gl_FragCoord.xy / u_resolution.xy;
+            //keep image original size
             vec2 screenUV = gl_FragCoord.xy / u_imageSize.xy;
             vec4 maskColor = texture2D(iChannel1,  screenUV,1.0);
 
@@ -58,7 +60,7 @@
             float brightness = 1.0 - maskHSV.z;
             
             //calculate pixel-to-mimic position
-            vec2 texturePositionToUse =  screenUV + vec2(brightness-0.5)*u_displacement;
+            vec2 texturePositionToUse =  screenUV * u_imageScale + vec2(brightness-0.5)*u_displacement;
 
             bool pixelOutsideImage = texturePositionToUse.x > 1.0 || texturePositionToUse.x < 0.0 || texturePositionToUse.y > 1.0 ||  texturePositionToUse.y < 0.0;
             
@@ -95,6 +97,7 @@
             this.canvasWidth = 500;
             this.canvasHeight = 500;
             this.fitCanvasToImage = false;
+            this.imageScale = 1.0;
         };
 
         var container;
@@ -126,6 +129,9 @@
             shaderGUI.add(effectControls, 'MaxVerticalDisplacement', -1.0, 1.0);
             shaderGUI.add(effectControls, 'wrapPixelsAround').onChange((value) => {
                 uniforms.u_wrapPixelsAround.value = value;
+            });
+            shaderGUI.add(effectControls, 'imageScale',  1.0, 5.0).onChange((value) => {
+                uniforms.u_imageScale.value = 1.0 / value;
             });
 
             var canvasWidthUI = canvasGUI
@@ -188,7 +194,8 @@
                 u_wrapPixelsAround: { type: 'bool', value: effectControls.wrapPixelsAround },
                 iChannel0: { type: 'sampler2D', value: null },
                 iChannel1: { type: 'sampler2D', value: null },
-                u_imageSize: {type: 'v2', value: new THREE.Vector2()}
+                u_imageSize: {type: 'v2', value: new THREE.Vector2()},
+                u_imageScale: { type: "1f", value: 1.0 },
             };
 
             uniforms.u_displacement.value.x = 0.1;
@@ -241,7 +248,7 @@
         // }
 
         function UpdateCanvasSize () {
-            renderer.setSize(effectControls.canvasWidth, effectControls.canvasHeight);
+            renderer.setSize(effectControls.canvasWidth * effectControls.imageScale, effectControls.canvasHeight*effectControls.imageScale);
             uniforms.u_resolution.value.x = effectControls.canvasWidth;
             uniforms.u_resolution.value.y = effectControls.canvasHeight;
         }
