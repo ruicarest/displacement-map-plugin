@@ -34,6 +34,8 @@
         uniform bool u_wrapPixelsAround;
         uniform vec2 u_imageSize;
         uniform float u_imageScale;
+        uniform vec2 u_maskSize;
+        uniform int u_mapBehaviour;
 
         // All components are in the range [0…1], including hue.
         vec3 rgb2hsv(vec3 c)
@@ -52,7 +54,21 @@
             //vec2 screenUV = gl_FragCoord.xy / u_resolution.xy;
             //keep image original size
             vec2 screenUV = gl_FragCoord.xy / u_imageSize.xy;
-            vec4 maskColor = texture2D(iChannel1,  screenUV*u_imageScale, 1.0);
+            
+            vec4 maskColor;
+            if(u_mapBehaviour == 2) {
+                maskColor = texture2D(iChannel1,  screenUV*u_imageScale, 1.0);
+            }
+            else if(u_mapBehaviour == 3) {
+                vec2 maskUV = gl_FragCoord.xy / u_maskSize.xy;
+                maskColor = texture2D(iChannel1, maskUV , 1.0);
+            }
+            else if(u_mapBehaviour == 1) {
+                maskColor = vec4(0.0);
+            }
+            else {
+                maskColor = texture2D(iChannel0,  screenUV*u_imageScale, 1.0);
+            }
 
             //convert to HSV
             vec3 maskHSV = rgb2hsv(vec3(maskColor.r, maskColor.g, maskColor.b));
@@ -74,14 +90,19 @@
     </script>
     <script>
 
-        var loadTextureForUnifrom = (texture, uniform) => {
+        //type: 1=mask, 2=image
+        var loadTextureForUnifrom = (texture, uniform, type) => {
             return new THREE.TextureLoader().load(texture, function (texture) {
                 uniform.value = texture;
                 uniform.needsUpdate = true;
                 texture.minFilter = THREE.NearestFilter;
-                //TODO: move it from here, affected by maskImage size
-                uniforms.u_imageSize.value = new THREE.Vector2(texture.image.width, texture.image.height);
-                // texture.magFilter = THREE.NearestFilter;
+                if(type == 2) {
+                    uniforms.u_imageSize.value = new THREE.Vector2(texture.image.width, texture.image.height);
+                }
+                else {
+                    uniforms.u_maskSize.value = new THREE.Vector2(texture.image.width, texture.image.height);
+                }
+                    // texture.magFilter = THREE.NearestFilter;
                 // texture.warpS = THREE.RepeatWrapping;
                 // texture.warpT = THREE.RepeatWrapping;
             });
@@ -98,6 +119,7 @@
             this.canvasHeight = 500;
             this.fitCanvasToImage = false;
             this.imageScale = 1.0;
+            this.MapBehaviour = 2;
         };
 
         var container;
@@ -123,16 +145,20 @@
             imageGUI.open();
 
             shaderGUI.add(effectControls, 'DisplacementMapLayer').onChange(function (value) {
-                maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1);
+                maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1, 1);
             });
             shaderGUI.add(effectControls, 'imageURL').onChange(function (value) {
-                gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
+                gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0, 2);
             });
             shaderGUI.add(effectControls, 'MaxHorizontalDisplacement', -1.0, 1.0);
             shaderGUI.add(effectControls, 'MaxVerticalDisplacement', -1.0, 1.0);
             shaderGUI.add(effectControls, 'wrapPixelsAround').onChange((value) => {
                 uniforms.u_wrapPixelsAround.value = value;
             });
+            shaderGUI.add(effectControls, 'MapBehaviour', { Tile: 1, Stretch: 2, Center: 3 })
+                .onChange((value) => {
+                    uniforms.u_mapBehaviour.value = value;
+                });
 
             imageGUI.add(effectControls, 'imageScale',  1.0, 5.0).onChange((value) => {
                 uniforms.u_imageScale.value = 1.0 / value;
@@ -170,14 +196,14 @@
 
             videoGUI.add(effectControls, 'videoAsMask').onChange((value) => {
                 if(value == false) {
-                    maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1);
+                    maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1, 1);
                 } else {
                     videoPlaying = false;
                 }
             });
             videoGUI.add(effectControls, 'videoAsImage').onChange((value) => {
                 if(value == false) {
-                    gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
+                    gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0, 2);
                 } else {
                     videoPlaying = false;
                 }
@@ -203,6 +229,8 @@
                 iChannel1: { type: 'sampler2D', value: null },
                 u_imageSize: {type: 'v2', value: new THREE.Vector2()},
                 u_imageScale: { type: "1f", value: 1.0 },
+                u_maskSize: {type: 'v2', value: new THREE.Vector2()},
+                u_mapBehaviour: {type: 'int', value: 2.0}
             };
 
             uniforms.u_displacement.value.x = 0.1;
@@ -214,11 +242,11 @@
             //HALF IMAGE
             //var maskImage = new THREE.TextureLoader().load( "https://i.ibb.co/kGF0sMW/Untitled.png" );
             //1/3 IMAGE  
-            maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1);
+            maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1, 1);
             //ORIGINAL
             //var gameImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/game_screenshot.png" );
             //1ST USED IMAGE
-            gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
+            gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0, 2);
             //gameImage = new THREE.TextureLoader().load( text.imageURL );
             //MAN IMAGE https://i.ibb.co/h1pZRzR/Capture.png
 
