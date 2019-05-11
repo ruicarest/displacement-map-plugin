@@ -62,7 +62,11 @@
             
             vec4 maskColor;
             //Tile: 1, Stretch: 2, Center: 3 
-            if(u_mapBehaviour == 2) {
+            if(u_mapBehaviour == 1) {
+                vec2 maskUV = gl_FragCoord.xy / u_maskSize.xy;
+                maskColor = texture2D(iChannel1, fract(maskUV) , 1.0);
+            }
+            else if(u_mapBehaviour == 2) {
                 maskColor = texture2D(iChannel1,  screenUV*u_imageScale, 1.0);
             }
             else if(u_mapBehaviour == 3) {
@@ -71,9 +75,6 @@
 
                 vec2 maskUV = (gl_FragCoord.xy - maskUVoffSet) / u_maskSize.xy;
                 maskColor = texture2D(iChannel1, maskUV , 1.0);
-            }
-            else if(u_mapBehaviour == 1) {
-                maskColor = vec4(0.0);
             }
             else {
                 maskColor = texture2D(iChannel0,  screenUV*u_imageScale, 1.0);
