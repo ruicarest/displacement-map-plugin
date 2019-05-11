@@ -121,7 +121,7 @@
             this.MaxHorizontalDisplacement = 0.001;
             this.MaxVerticalDisplacement = 0.001;
             this.imageURL = "https://i.ibb.co/rQkhD97/0.jpg";
-            this.DisplacementMapLayer = "https://i.ibb.co/FJWXGCt/layer-v1.png";
+            this.DisplacementMapURL = "https://i.ibb.co/FJWXGCt/layer-v1.png";
             this.wrapPixelsAround = false;
             this.videoAsMask = false;
             this.videoAsImage = false;
@@ -154,8 +154,8 @@
             canvasGUI.open();
             imageGUI.open();
 
-            shaderGUI.add(effectProperties, 'DisplacementMapLayer').onChange(function (value) {
-                maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapLayer, uniforms.iChannel1, 1);
+            shaderGUI.add(effectProperties, 'DisplacementMapURL').onChange(function (value) {
+                maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapURL, uniforms.iChannel1, 1);
             });
             shaderGUI.add(effectProperties, 'imageURL').onChange(function (value) {
                 gameImage = loadTextureForUnifrom(effectProperties.imageURL, uniforms.iChannel0, 2);
@@ -206,7 +206,7 @@
 
             videoGUI.add(effectProperties, 'videoAsMask').onChange((value) => {
                 if(value == false) {
-                    maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapLayer, uniforms.iChannel1, 1);
+                    maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapURL, uniforms.iChannel1, 1);
                 } else {
                     videoPlaying = false;
                 }
@@ -252,7 +252,7 @@
             //HALF IMAGE
             //var maskImage = new THREE.TextureLoader().load( "https://i.ibb.co/kGF0sMW/Untitled.png" );
             //1/3 IMAGE  
-            maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapLayer, uniforms.iChannel1, 1);
+            maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapURL, uniforms.iChannel1, 1);
             //ORIGINAL
             //var gameImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/game_screenshot.png" );
             //1ST USED IMAGE
