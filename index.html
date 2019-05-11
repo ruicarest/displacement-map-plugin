@@ -55,10 +55,10 @@
             //vec2 screenUVoffSet = vec2(0.0);
             
             //center image offset
-            vec2 screenUVoffSet = u_resolution.xy/2.0 - u_imageSize.xy/2.0;
+            vec2 screenUVoffSet = u_resolution.xy*u_imageScale/2.0 - u_imageSize.xy/2.0;
 
             //calc screenUV
-            vec2 screenUV = (gl_FragCoord.xy - screenUVoffSet) / u_imageSize.xy;
+            vec2 screenUV = (gl_FragCoord.xy * u_imageScale - screenUVoffSet ) / u_imageSize.xy;
             
             vec4 maskColor;
             //Tile: 1, Stretch: 2, Center: 3 
@@ -80,10 +80,10 @@
             vec3 maskHSV = rgb2hsv(vec3(maskColor.r, maskColor.g, maskColor.b));
 
             float brightness = 1.0 - maskHSV.z;
-            
-            //calculate pixel-to-mimic position
-            vec2 texturePositionToUse =  screenUV * u_imageScale + vec2(brightness-0.5)*u_displacement;
 
+            //calculate pixel-to-mimic position
+            vec2 texturePositionToUse =  screenUV + vec2(brightness-0.5)*u_displacement;
+            
             bool pixelOutsideImage = texturePositionToUse.x > 1.0 || texturePositionToUse.x < 0.0 || texturePositionToUse.y > 1.0 ||  texturePositionToUse.y < 0.0;
             
             if(u_wrapPixelsAround || !pixelOutsideImage) {
@@ -114,8 +114,8 @@
             });
         }
         var EffectControls = function () {
-            this.MaxHorizontalDisplacement = 0.0;
-            this.MaxVerticalDisplacement = 0.0;
+            this.MaxHorizontalDisplacement = 0.001;
+            this.MaxVerticalDisplacement = 0.001;
             this.imageURL = "https://i.ibb.co/rQkhD97/0.jpg";
             this.DisplacementMapLayer = "https://i.ibb.co/FJWXGCt/layer-v1.png";
             this.wrapPixelsAround = false;
@@ -167,7 +167,7 @@
                 });
 
             imageGUI.add(effectControls, 'imageScale',  1.0, 5.0).onChange((value) => {
-                uniforms.u_imageScale.value = 1.0 / value;
+                uniforms.u_imageScale.value = 1.0 / value; //TODO remove value 
                 if(effectControls.fitCanvasToImage == true){
                     UpdateCanvasSize();
                 }
@@ -289,7 +289,15 @@
         // }
 
         function UpdateCanvasSize () {
-            renderer.setSize(effectControls.canvasWidth * effectControls.imageScale, effectControls.canvasHeight*effectControls.imageScale);
+            if( effectControls.fitCanvasToImage) {
+                var scale = effectControls.fitCanvasToImage ? effectControls.imageScale : 1;
+                renderer.setSize(gameImage.image.width * scale, gameImage.image.width*scale);   
+            }
+            else {
+                renderer.setSize(effectControls.canvasWidth, effectControls.canvasHeight);
+            }
+            
+            //renderer.setSize(effectControls.canvasWidth * scale, effectControls.canvasHeight*scale);
             uniforms.u_resolution.value.x = effectControls.canvasWidth;
             uniforms.u_resolution.value.y = effectControls.canvasHeight;
         }
