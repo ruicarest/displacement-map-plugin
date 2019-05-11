@@ -292,17 +292,19 @@
         // }
 
         function UpdateCanvasSize () {
+
+            var scale = effectControls.fitCanvasToImage ? effectControls.imageScale : 1;
+
             if( effectControls.fitCanvasToImage) {
-                var scale = effectControls.fitCanvasToImage ? effectControls.imageScale : 1;
-                renderer.setSize(gameImage.image.width * scale, gameImage.image.width*scale);   
+                renderer.setSize(gameImage.image.width * scale, gameImage.image.height*scale);   
             }
             else {
                 renderer.setSize(effectControls.canvasWidth, effectControls.canvasHeight);
             }
             
             //renderer.setSize(effectControls.canvasWidth * scale, effectControls.canvasHeight*scale);
-            uniforms.u_resolution.value.x = effectControls.canvasWidth;
-            uniforms.u_resolution.value.y = effectControls.canvasHeight;
+            uniforms.u_resolution.value.x = effectControls.canvasWidth * scale;
+            uniforms.u_resolution.value.y = effectControls.canvasHeight * scale;
         }
 
         var fps = 30;
