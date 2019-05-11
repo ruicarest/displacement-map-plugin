@@ -15,6 +15,11 @@
 
 <body>
     <div id="container"></div>
+    <video id="video" loop crossOrigin="anonymous" webkit-playsinline style="display:none"
+    muted="muted"
+    >
+      <source src="https://vjs.zencdn.net/v/oceans.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'>
+    </video>
     <script src="js/three.min.js"></script>
     <script src="js/dat.gui.min.js"></script>
     <script id="vertexShader" type="x-shader/x-vertex">
@@ -81,18 +86,22 @@
                 // texture.warpT = THREE.RepeatWrapping;
             });
         }
-        var FizzyText = function () {
+        var EffectControls = function () {
             this.MaxHorizontalDisplacement = 0.1;
             this.MaxVerticalDisplacement = 0.1;
             this.imageURL = "https://i.ibb.co/rQkhD97/0.jpg";
             this.DisplacementMapLayer = "https://i.ibb.co/FJWXGCt/layer-v1.png";
             this.wrapPixelsAround = false;
+            this.videoAsMask = false;
+            this.videoAsImage = false;
         };
 
         var container;
+        var videoElement, playPromise; 
+        var videoPlaying = false;
         var camera, scene, renderer;
         var uniforms;
-        var text = new FizzyText();
+        var effectControls = new EffectControls();
         var gui = new dat.GUI();
         var maskImage, gameImage;
 
@@ -100,16 +109,35 @@
         animate();
 
         window.onload = function () {
-            gui.add(text, 'imageURL').onChange(function (value) {
-                gameImage = loadTextureForUnifrom(text.imageURL, uniforms.iChannel0);
+            gui.add(effectControls, 'imageURL').onChange(function (value) {
+                gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
             });
-            gui.add(text, 'DisplacementMapLayer').onChange(function (value) {
-                maskImage = loadTextureForUnifrom(text.DisplacementMapLayer, uniforms.iChannel1);
+            gui.add(effectControls, 'DisplacementMapLayer').onChange(function (value) {
+                maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1);
             });
-            gui.add(text, 'MaxHorizontalDisplacement', -1.0, 1.0);
-            gui.add(text, 'MaxVerticalDisplacement', -1.0, 1.0);
-            gui.add(text, 'wrapPixelsAround').onChange((value) => {
+            gui.add(effectControls, 'MaxHorizontalDisplacement', -1.0, 1.0);
+            gui.add(effectControls, 'MaxVerticalDisplacement', -1.0, 1.0);
+            gui.add(effectControls, 'wrapPixelsAround').onChange((value) => {
                 uniforms.u_wrapPixelsAround.value = value;
+            });
+
+            var f1 = gui.addFolder('Video');
+            
+            f1.add(effectControls, 'videoAsMask').onChange((value) => {
+                //uniforms.videoAsMask.value = value;
+                if(value == false) {
+                    maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1);
+                } else {
+                    videoPlaying = false;
+                }
+            });
+            f1.add(effectControls, 'videoAsImage').onChange((value) => {
+                //uniforms.videoAsImage.value = value;
+                if(value == false) {
+                    gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
+                } else {
+                    videoPlaying = false;
+                }
             });
         };
 
@@ -127,7 +155,7 @@
                 u_time: { type: "1f", value: 0 },
                 u_resolution: { type: 'v2', value: new THREE.Vector2() },
                 u_displacement: { type: 'v2', value: new THREE.Vector2() },
-                u_wrapPixelsAround: { type: 'bool', value: text.wrapPixelsAround },
+                u_wrapPixelsAround: { type: 'bool', value: effectControls.wrapPixelsAround },
                 iChannel0: { type: 'sampler2D', value: null },
                 iChannel1: { type: 'sampler2D', value: null }
             };
@@ -135,19 +163,22 @@
             uniforms.u_displacement.value.x = 0.1;
             uniforms.u_displacement.value.y = 0.1;
 
+            //https://codepen.io/Grooo/pen/dRXQPq -> vídeo example
             //cant load images locally  https://i.ibb.co/kGF0sMW/Untitled.png
             //var maskImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/mask.png" );            
             //HALF IMAGE
             //var maskImage = new THREE.TextureLoader().load( "https://i.ibb.co/kGF0sMW/Untitled.png" );
             //1/3 IMAGE  
-            maskImage = loadTextureForUnifrom(text.DisplacementMapLayer, uniforms.iChannel1);
+            maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1);
             //ORIGINAL
             //var gameImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/game_screenshot.png" );
             //1ST USED IMAGE
-            gameImage = loadTextureForUnifrom(text.imageURL, uniforms.iChannel0);
+            gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
+            //gameImage = new THREE.TextureLoader().load( text.imageURL );
             //MAN IMAGE https://i.ibb.co/h1pZRzR/Capture.png
 
-
+            videoElement = document.getElementById('video');
+            playPromise = videoElement.play();
 
             var material = new THREE.ShaderMaterial( {
                 uniforms: uniforms,
@@ -177,14 +208,56 @@
             uniforms.u_resolution.value.y = renderer.domElement.height;
         }
 
+        var fps = 30;
+        var now;
+        var then = Date.now();
+        var interval = 1000/fps;
+        var delta;
+
         function animate() {
             requestAnimationFrame( animate );
+
+            now = Date.now();
+            delta = now - then;
+
+            if (playPromise !== undefined && !videoPlaying) {            
+                playPromise.then(function() {
+                    videoPlaying = true;
+                    videoElement.play();
+                    if(effectControls.videoAsImage) {
+                        gameImage = new THREE.VideoTexture(videoElement);
+                    }
+                    if(effectControls.videoAsMask) {
+                        maskImage = new THREE.VideoTexture(videoElement);
+                    }
+                }).catch(function(error) {
+                    //TODO: add an UI to manual playing
+                    console.log("play not ready");
+                });
+            }
+
+            if (delta > interval) {
+                //console.log("frame");
+                then = now - (delta % interval);
+                
+                if(videoPlaying) {
+                    if(effectControls.videoAsImage) {
+                        uniforms.iChannel0.value = gameImage;
+                        uniforms.iChannel0.needsUpdate = true;
+                    }
+                    if(effectControls.videoAsMask) {
+                        uniforms.iChannel1.value = maskImage;
+                        uniforms.iChannel1.needsUpdate = true;
+                    }
+                }
+            }
+
             render();
         }
 
         function render() {
-            uniforms.u_displacement.value.x = text.MaxHorizontalDisplacement;
-            uniforms.u_displacement.value.y = text.MaxVerticalDisplacement;
+            uniforms.u_displacement.value.x = effectControls.MaxHorizontalDisplacement;
+            uniforms.u_displacement.value.y = effectControls.MaxVerticalDisplacement;
             uniforms.u_time.value += 0.05;
             renderer.render( scene, camera );
         }
