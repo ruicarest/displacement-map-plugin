@@ -28,6 +28,7 @@
 
         uniform sampler2D iChannel0;
         uniform sampler2D iChannel1;
+        uniform vec2 u_mouse;
         uniform vec2 u_resolution;
         uniform vec2 u_displacement;
         uniform float u_time;       // Time in seconds since load
@@ -60,6 +61,8 @@
             //calc screenUV
             vec2 screenUV = (gl_FragCoord.xy * u_imageScale - screenUVoffSet ) / u_imageSize.xy;
             
+            vec2 distanceToMouse = step(vec2(0.2), abs(distance(gl_FragCoord.xy, u_mouse) / u_resolution.xy));
+
             vec4 maskColor;
             //Tile: 1, Stretch: 2, Center: 3 
             if(u_mapBehaviour == 1) {
@@ -86,7 +89,7 @@
             float brightness = 1.0 - maskHSV.z;
 
             //calculate pixel-to-mimic position
-            vec2 texturePositionToUse =  screenUV + vec2(brightness-0.5)*u_displacement;
+            vec2 texturePositionToUse =  screenUV + vec2(brightness-0.5)*u_displacement*distanceToMouse;
             
             bool pixelOutsideImage = texturePositionToUse.x > 1.0 || texturePositionToUse.x < 0.0 || texturePositionToUse.y > 1.0 ||  texturePositionToUse.y < 0.0;
             
@@ -220,6 +223,12 @@
             });
         };
 
+        document.onmousemove = function(e){
+            uniforms.u_mouse.value.x = e.pageX;
+            //canvas and glsl coordinates have different pivot points
+            uniforms.u_mouse.value.y = uniforms.u_resolution.value.y - e.pageY;
+        }
+
         function init() {
             container = document.getElementById( 'container' );
 
@@ -240,7 +249,8 @@
                 u_imageSize: {type: 'v2', value: new THREE.Vector2()},
                 u_imageScale: { type: "1f", value: 1.0 },
                 u_maskSize: {type: 'v2', value: new THREE.Vector2()},
-                u_mapBehaviour: {type: 'int', value: 2.0}
+                u_mapBehaviour: {type: 'int', value: 2.0},
+                u_mouse: {type: 'v2', value: new THREE.Vector2()}
             };
 
             uniforms.u_displacement.value.x = 0.1;
