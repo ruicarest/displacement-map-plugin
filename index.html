@@ -61,7 +61,8 @@
             //calc screenUV
             vec2 screenUV = (gl_FragCoord.xy * u_imageScale - screenUVoffSet ) / u_imageSize.xy;
             
-            vec2 distanceToMouse = step(vec2(0.2), abs(distance(gl_FragCoord.xy, u_mouse) / u_resolution.xy));
+            //"step" to make a perfect circle
+            vec2 distanceToMouse = step(vec2(0.2), distance(gl_FragCoord.xy, u_mouse) / u_resolution.xy);
 
             vec4 maskColor;
             //Tile: 1, Stretch: 2, Center: 3 
