@@ -26,7 +26,7 @@
         //Define the precision
         precision mediump float;
 
-        uniform sampler2D iChannel0;
+        uniform sampler2D u_image;
         uniform sampler2D iChannel1;
         uniform vec2 u_mouse;
         uniform vec2 u_resolution;
@@ -81,7 +81,7 @@
                 maskColor = texture2D(iChannel1, maskUV , 1.0);
             }
             else {
-                maskColor = texture2D(iChannel0,  screenUV*u_imageScale, 1.0);
+                maskColor = texture2D(u_image,  screenUV*u_imageScale, 1.0);
             }
 
             //convert to HSV
@@ -95,7 +95,7 @@
             bool pixelOutsideImage = texturePositionToUse.x > 1.0 || texturePositionToUse.x < 0.0 || texturePositionToUse.y > 1.0 ||  texturePositionToUse.y < 0.0;
             
             if(u_wrapPixelsAround || !pixelOutsideImage) {
-                gl_FragColor =  texture2D(iChannel0, fract(texturePositionToUse));
+                gl_FragColor =  texture2D(u_image, fract(texturePositionToUse));
             } else {
                 //if pixel is outside original image, paint it black
                 gl_FragColor = vec4(0.0);                
@@ -162,7 +162,7 @@
                 maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapURL, uniforms.iChannel1, 1);
             });
             shaderGUI.add(effectProperties, 'imageURL').onChange(function (value) {
-                gameImage = loadTextureForUnifrom(effectProperties.imageURL, uniforms.iChannel0, 2);
+                gameImage = loadTextureForUnifrom(effectProperties.imageURL, uniforms.u_image, 2);
             });
             shaderGUI.add(effectProperties, 'MaxHorizontalDisplacement', -1.0, 1.0);
             shaderGUI.add(effectProperties, 'MaxVerticalDisplacement', -1.0, 1.0);
@@ -217,7 +217,7 @@
             });
             videoGUI.add(effectProperties, 'videoAsImage').onChange((value) => {
                 if(value == false) {
-                    gameImage = loadTextureForUnifrom(effectProperties.imageURL, uniforms.iChannel0, 2);
+                    gameImage = loadTextureForUnifrom(effectProperties.imageURL, uniforms.u_image, 2);
                 } else {
                     videoPlaying = false;
                 }
@@ -245,7 +245,7 @@
                 u_resolution: { type: 'v2', value: new THREE.Vector2() },
                 u_displacement: { type: 'v2', value: new THREE.Vector2() },
                 u_wrapPixelsAround: { type: 'bool', value: effectProperties.wrapPixelsAround },
-                iChannel0: { type: 'sampler2D', value: null },
+                u_image: { type: 'sampler2D', value: null },
                 iChannel1: { type: 'sampler2D', value: null },
                 u_imageSize: {type: 'v2', value: new THREE.Vector2()},
                 u_imageScale: { type: "1f", value: 1.0 },
@@ -267,7 +267,7 @@
             //ORIGINAL
             //var gameImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/game_screenshot.png" );
             //1ST USED IMAGE
-            gameImage = loadTextureForUnifrom(effectProperties.imageURL, uniforms.iChannel0, 2);
+            gameImage = loadTextureForUnifrom(effectProperties.imageURL, uniforms.u_image, 2);
             //gameImage = new THREE.TextureLoader().load( text.imageURL );
             //MAN IMAGE https://i.ibb.co/h1pZRzR/Capture.png
 
@@ -325,6 +325,7 @@
         var delta;
 
         function animate() {
+
             requestAnimationFrame( animate );
 
             now = Date.now();
@@ -352,8 +353,8 @@
                 
                 if(videoPlaying) {
                     if(effectProperties.videoAsImage) {
-                        uniforms.iChannel0.value = gameImage;
-                        uniforms.iChannel0.needsUpdate = true;
+                        uniforms.u_image.value = gameImage;
+                        uniforms.u_image.needsUpdate = true;
                     }
                     if(effectProperties.videoAsMask) {
                         uniforms.iChannel1.value = maskImage;
