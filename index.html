@@ -27,7 +27,7 @@
         precision mediump float;
 
         uniform sampler2D u_image;
-        uniform sampler2D iChannel1;
+        uniform sampler2D u_filter;
         uniform vec2 u_mouse;
         uniform vec2 u_resolution;
         uniform vec2 u_displacement;
@@ -68,17 +68,17 @@
             //Tile: 1, Stretch: 2, Center: 3 
             if(u_mapBehaviour == 1) {
                 vec2 maskUV = gl_FragCoord.xy / u_maskSize.xy;
-                maskColor = texture2D(iChannel1, fract(maskUV) , 1.0);
+                maskColor = texture2D(u_filter, fract(maskUV) , 1.0);
             }
             else if(u_mapBehaviour == 2) {
-                maskColor = texture2D(iChannel1,  screenUV, 1.0);
+                maskColor = texture2D(u_filter,  screenUV, 1.0);
             }
             else if(u_mapBehaviour == 3) {
                 //vec2 maskUV = gl_FragCoord.xy / u_maskSize.xy;
                 vec2 maskUVoffSet = u_resolution.xy/2.0 - u_maskSize.xy/2.0;
 
                 vec2 maskUV = (gl_FragCoord.xy - maskUVoffSet) / u_maskSize.xy;
-                maskColor = texture2D(iChannel1, maskUV , 1.0);
+                maskColor = texture2D(u_filter, maskUV , 1.0);
             }
             else {
                 maskColor = texture2D(u_image,  screenUV*u_imageScale, 1.0);
@@ -159,7 +159,7 @@
             imageGUI.open();
 
             shaderGUI.add(effectProperties, 'DisplacementMapURL').onChange(function (value) {
-                maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapURL, uniforms.iChannel1, 1);
+                maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapURL, uniforms.u_filter, 1);
             });
             shaderGUI.add(effectProperties, 'imageURL').onChange(function (value) {
                 gameImage = loadTextureForUnifrom(effectProperties.imageURL, uniforms.u_image, 2);
@@ -210,7 +210,7 @@
 
             videoGUI.add(effectProperties, 'videoAsMask').onChange((value) => {
                 if(value == false) {
-                    maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapURL, uniforms.iChannel1, 1);
+                    maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapURL, uniforms.u_filter, 1);
                 } else {
                     videoPlaying = false;
                 }
@@ -246,7 +246,7 @@
                 u_displacement: { type: 'v2', value: new THREE.Vector2() },
                 u_wrapPixelsAround: { type: 'bool', value: effectProperties.wrapPixelsAround },
                 u_image: { type: 'sampler2D', value: null },
-                iChannel1: { type: 'sampler2D', value: null },
+                u_filter: { type: 'sampler2D', value: null },
                 u_imageSize: {type: 'v2', value: new THREE.Vector2()},
                 u_imageScale: { type: "1f", value: 1.0 },
                 u_maskSize: {type: 'v2', value: new THREE.Vector2()},
@@ -263,7 +263,7 @@
             //HALF IMAGE
             //var maskImage = new THREE.TextureLoader().load( "https://i.ibb.co/kGF0sMW/Untitled.png" );
             //1/3 IMAGE  
-            maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapURL, uniforms.iChannel1, 1);
+            maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapURL, uniforms.u_filter, 1);
             //ORIGINAL
             //var gameImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/game_screenshot.png" );
             //1ST USED IMAGE
@@ -357,8 +357,8 @@
                         uniforms.u_image.needsUpdate = true;
                     }
                     if(effectProperties.videoAsMask) {
-                        uniforms.iChannel1.value = maskImage;
-                        uniforms.iChannel1.needsUpdate = true;
+                        uniforms.u_filter.value = maskImage;
+                        uniforms.u_filter.needsUpdate = true;
                     }
                 }
             }
