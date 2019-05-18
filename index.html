@@ -22,11 +22,6 @@
     </video>
     <script src="js/three.min.js"></script>
     <script src="js/dat.gui.min.js"></script>
-    <script id="vertexShader" type="x-shader/x-vertex">
-        void main() {
-            gl_Position = vec4( position, 1.0 );
-        }
-    </script>
     <script id="fragmentShader" type="x-shader/x-fragment">
         //Define the precision
         precision mediump float;
@@ -37,7 +32,8 @@
         uniform vec2 u_displacement;
         uniform float u_time;       // Time in seconds since load
         uniform bool u_wrapPixelsAround;
-
+        uniform vec2 u_imageSize;
+        uniform float u_imageScale;
 
         // All components are in the range [0…1], including hue.
         vec3 rgb2hsv(vec3 c)
@@ -52,9 +48,11 @@
         }
 
         void main( void ) {
-
-            vec2 screenUV = gl_FragCoord.xy / u_resolution.xy;
-            vec4 maskColor = texture2D(iChannel1,  screenUV,1.0);
+            //stretch image to canvas
+            //vec2 screenUV = gl_FragCoord.xy / u_resolution.xy;
+            //keep image original size
+            vec2 screenUV = gl_FragCoord.xy / u_imageSize.xy;
+            vec4 maskColor = texture2D(iChannel1,  screenUV*u_imageScale, 1.0);
 
             //convert to HSV
             vec3 maskHSV = rgb2hsv(vec3(maskColor.r, maskColor.g, maskColor.b));
@@ -62,7 +60,7 @@
             float brightness = 1.0 - maskHSV.z;
             
             //calculate pixel-to-mimic position
-            vec2 texturePositionToUse =  screenUV + vec2(brightness-0.5)*u_displacement;
+            vec2 texturePositionToUse =  screenUV * u_imageScale + vec2(brightness-0.5)*u_displacement;
 
             bool pixelOutsideImage = texturePositionToUse.x > 1.0 || texturePositionToUse.x < 0.0 || texturePositionToUse.y > 1.0 ||  texturePositionToUse.y < 0.0;
             
@@ -81,6 +79,8 @@
                 uniform.value = texture;
                 uniform.needsUpdate = true;
                 texture.minFilter = THREE.NearestFilter;
+                //TODO: move it from here, affected by maskImage size
+                uniforms.u_imageSize.value = new THREE.Vector2(texture.image.width, texture.image.height);
                 // texture.magFilter = THREE.NearestFilter;
                 // texture.warpS = THREE.RepeatWrapping;
                 // texture.warpT = THREE.RepeatWrapping;
@@ -94,6 +94,10 @@
             this.wrapPixelsAround = false;
             this.videoAsMask = false;
             this.videoAsImage = false;
+            this.canvasWidth = 500;
+            this.canvasHeight = 500;
+            this.fitCanvasToImage = false;
+            this.imageScale = 1.0;
         };
 
         var container;
@@ -109,30 +113,69 @@
         animate();
 
         window.onload = function () {
-            gui.add(effectControls, 'imageURL').onChange(function (value) {
-                gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
-            });
-            gui.add(effectControls, 'DisplacementMapLayer').onChange(function (value) {
+            var shaderGUI = gui.addFolder('Shader');
+            var videoGUI = gui.addFolder('Video');
+            var canvasGUI = gui.addFolder('Canvas');
+            var imageGUI = gui.addFolder('Image');
+
+            shaderGUI.open();
+            canvasGUI.open();
+            imageGUI.open();
+
+            shaderGUI.add(effectControls, 'DisplacementMapLayer').onChange(function (value) {
                 maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1);
             });
-            gui.add(effectControls, 'MaxHorizontalDisplacement', -1.0, 1.0);
-            gui.add(effectControls, 'MaxVerticalDisplacement', -1.0, 1.0);
-            gui.add(effectControls, 'wrapPixelsAround').onChange((value) => {
+            shaderGUI.add(effectControls, 'imageURL').onChange(function (value) {
+                gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
+            });
+            shaderGUI.add(effectControls, 'MaxHorizontalDisplacement', -1.0, 1.0);
+            shaderGUI.add(effectControls, 'MaxVerticalDisplacement', -1.0, 1.0);
+            shaderGUI.add(effectControls, 'wrapPixelsAround').onChange((value) => {
                 uniforms.u_wrapPixelsAround.value = value;
             });
 
-            var f1 = gui.addFolder('Video');
-            
-            f1.add(effectControls, 'videoAsMask').onChange((value) => {
-                //uniforms.videoAsMask.value = value;
+            imageGUI.add(effectControls, 'imageScale',  1.0, 5.0).onChange((value) => {
+                uniforms.u_imageScale.value = 1.0 / value;
+                if(effectControls.fitCanvasToImage == true){
+                    UpdateCanvasSize();
+                }
+            });
+
+            var canvasWidthUI = canvasGUI
+                .add(effectControls, 'canvasWidth', 10.0, 3840.0)
+                .listen()
+                .onChange((value) => {               
+                    UpdateCanvasSize();
+                    });
+
+            var canvasHeightUI = canvasGUI
+                .add(effectControls, 'canvasHeight',  10.0, 2160.0)
+                .listen().onChange((value) => {
+                    UpdateCanvasSize();
+                    });
+
+            canvasGUI.add(effectControls, 'fitCanvasToImage').onChange((checked) => {
+                if(checked) {
+                    effectControls.canvasHeight = gameImage.image.height;
+                    effectControls.canvasWidth = gameImage.image.width;      
+                    canvasHeightUI.domElement.style.pointerEvents = "none";
+                    canvasWidthUI.domElement.style.pointerEvents = "none";
+                    UpdateCanvasSize();
+                }
+                else {
+                    canvasHeightUI.domElement.style.pointerEvents = "auto";
+                    canvasWidthUI.domElement.style.pointerEvents = "auto";
+                }
+            });
+
+            videoGUI.add(effectControls, 'videoAsMask').onChange((value) => {
                 if(value == false) {
                     maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1);
                 } else {
                     videoPlaying = false;
                 }
             });
-            f1.add(effectControls, 'videoAsImage').onChange((value) => {
-                //uniforms.videoAsImage.value = value;
+            videoGUI.add(effectControls, 'videoAsImage').onChange((value) => {
                 if(value == false) {
                     gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
                 } else {
@@ -157,7 +200,9 @@
                 u_displacement: { type: 'v2', value: new THREE.Vector2() },
                 u_wrapPixelsAround: { type: 'bool', value: effectControls.wrapPixelsAround },
                 iChannel0: { type: 'sampler2D', value: null },
-                iChannel1: { type: 'sampler2D', value: null }
+                iChannel1: { type: 'sampler2D', value: null },
+                u_imageSize: {type: 'v2', value: new THREE.Vector2()},
+                u_imageScale: { type: "1f", value: 1.0 },
             };
 
             uniforms.u_displacement.value.x = 0.1;
@@ -197,15 +242,22 @@
 
             container.appendChild( renderer.domElement );
 
-            onWindowResize();
-            window.addEventListener( 'resize', onWindowResize, false );
-
+            UpdateCanvasSize();
+            //onWindowResize();
+            //window.addEventListener( 'resize', onWindowResize, false );
         }
 
-        function onWindowResize(event) {
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            uniforms.u_resolution.value.x = renderer.domElement.width;
-            uniforms.u_resolution.value.y = renderer.domElement.height;
+        //deprecated
+        // function onWindowResize(event) {
+        //     renderer.setSize(window.innerWidth, window.innerHeight);
+        //     uniforms.u_resolution.value.x = renderer.domElement.width;
+        //     uniforms.u_resolution.value.y = renderer.domElement.height;
+        // }
+
+        function UpdateCanvasSize () {
+            renderer.setSize(effectControls.canvasWidth * effectControls.imageScale, effectControls.canvasHeight*effectControls.imageScale);
+            uniforms.u_resolution.value.x = effectControls.canvasWidth;
+            uniforms.u_resolution.value.y = effectControls.canvasHeight;
         }
 
         var fps = 30;
@@ -251,7 +303,6 @@
                     }
                 }
             }
-
             render();
         }
 
