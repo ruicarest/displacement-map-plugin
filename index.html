@@ -113,12 +113,12 @@
                 if(type == 2) {
                     uniforms.u_imageSize.value = new THREE.Vector2(texture.image.width, texture.image.height);
                 }
-                else {
+                else if (type == 1) {
                     uniforms.u_maskSize.value = new THREE.Vector2(texture.image.width, texture.image.height);
                 }
-                    // texture.magFilter = THREE.NearestFilter;
-                // texture.warpS = THREE.RepeatWrapping;
-                // texture.warpT = THREE.RepeatWrapping;
+                else {
+                    //size is not needed
+                }
             });
         }
         var EffectProperties = function () {
