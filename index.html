@@ -34,6 +34,8 @@
         uniform bool u_wrapPixelsAround;
         uniform vec2 u_imageSize;
         uniform float u_imageScale;
+        uniform vec2 u_maskSize;
+        uniform int u_mapBehaviour;
 
         // All components are in the range [0…1], including hue.
         vec3 rgb2hsv(vec3 c)
@@ -48,49 +50,78 @@
         }
 
         void main( void ) {
-            //stretch image to canvas
-            //vec2 screenUV = gl_FragCoord.xy / u_resolution.xy;
-            //keep image original size
-            vec2 screenUV = gl_FragCoord.xy / u_imageSize.xy;
-            vec4 maskColor = texture2D(iChannel1,  screenUV*u_imageScale, 1.0);
+
+            //left bottom corner image
+            //vec2 screenUVoffSet = vec2(0.0);
+            
+            //center image offset
+            vec2 screenUVoffSet = u_resolution.xy*u_imageScale/2.0 - u_imageSize.xy/2.0;
+
+            //calc screenUV
+            vec2 screenUV = (gl_FragCoord.xy * u_imageScale - screenUVoffSet ) / u_imageSize.xy;
+            
+            vec4 maskColor;
+            //Tile: 1, Stretch: 2, Center: 3 
+            if(u_mapBehaviour == 1) {
+                vec2 maskUV = gl_FragCoord.xy / u_maskSize.xy;
+                maskColor = texture2D(iChannel1, fract(maskUV) , 1.0);
+            }
+            else if(u_mapBehaviour == 2) {
+                maskColor = texture2D(iChannel1,  screenUV, 1.0);
+            }
+            else if(u_mapBehaviour == 3) {
+                //vec2 maskUV = gl_FragCoord.xy / u_maskSize.xy;
+                vec2 maskUVoffSet = u_resolution.xy/2.0 - u_maskSize.xy/2.0;
+
+                vec2 maskUV = (gl_FragCoord.xy - maskUVoffSet) / u_maskSize.xy;
+                maskColor = texture2D(iChannel1, maskUV , 1.0);
+            }
+            else {
+                maskColor = texture2D(iChannel0,  screenUV*u_imageScale, 1.0);
+            }
 
             //convert to HSV
             vec3 maskHSV = rgb2hsv(vec3(maskColor.r, maskColor.g, maskColor.b));
 
             float brightness = 1.0 - maskHSV.z;
-            
-            //calculate pixel-to-mimic position
-            vec2 texturePositionToUse =  screenUV * u_imageScale + vec2(brightness-0.5)*u_displacement;
 
+            //calculate pixel-to-mimic position
+            vec2 texturePositionToUse =  screenUV + vec2(brightness-0.5)*u_displacement;
+            
             bool pixelOutsideImage = texturePositionToUse.x > 1.0 || texturePositionToUse.x < 0.0 || texturePositionToUse.y > 1.0 ||  texturePositionToUse.y < 0.0;
             
             if(u_wrapPixelsAround || !pixelOutsideImage) {
                 gl_FragColor =  texture2D(iChannel0, fract(texturePositionToUse));
             } else {
                 //if pixel is outside original image, paint it black
-                    gl_FragColor = vec4(0.0);                
+                gl_FragColor = vec4(0.0);                
             }
         }
     </script>
     <script>
 
-        var loadTextureForUnifrom = (texture, uniform) => {
+        //type: 1=mask, 2=image
+        var loadTextureForUnifrom = (texture, uniform, type) => {
             return new THREE.TextureLoader().load(texture, function (texture) {
                 uniform.value = texture;
                 uniform.needsUpdate = true;
                 texture.minFilter = THREE.NearestFilter;
-                //TODO: move it from here, affected by maskImage size
-                uniforms.u_imageSize.value = new THREE.Vector2(texture.image.width, texture.image.height);
-                // texture.magFilter = THREE.NearestFilter;
+                if(type == 2) {
+                    uniforms.u_imageSize.value = new THREE.Vector2(texture.image.width, texture.image.height);
+                }
+                else {
+                    uniforms.u_maskSize.value = new THREE.Vector2(texture.image.width, texture.image.height);
+                }
+                    // texture.magFilter = THREE.NearestFilter;
                 // texture.warpS = THREE.RepeatWrapping;
                 // texture.warpT = THREE.RepeatWrapping;
             });
         }
-        var EffectControls = function () {
-            this.MaxHorizontalDisplacement = 0.1;
-            this.MaxVerticalDisplacement = 0.1;
+        var EffectProperties = function () {
+            this.MaxHorizontalDisplacement = 0.001;
+            this.MaxVerticalDisplacement = 0.001;
             this.imageURL = "https://i.ibb.co/rQkhD97/0.jpg";
-            this.DisplacementMapLayer = "https://i.ibb.co/FJWXGCt/layer-v1.png";
+            this.DisplacementMapURL = "https://i.ibb.co/FJWXGCt/layer-v1.png";
             this.wrapPixelsAround = false;
             this.videoAsMask = false;
             this.videoAsImage = false;
@@ -98,6 +129,7 @@
             this.canvasHeight = 500;
             this.fitCanvasToImage = false;
             this.imageScale = 1.0;
+            this.MapBehaviour = 2;
         };
 
         var container;
@@ -105,7 +137,7 @@
         var videoPlaying = false;
         var camera, scene, renderer;
         var uniforms;
-        var effectControls = new EffectControls();
+        var effectProperties = new EffectProperties();
         var gui = new dat.GUI();
         var maskImage, gameImage;
 
@@ -122,42 +154,46 @@
             canvasGUI.open();
             imageGUI.open();
 
-            shaderGUI.add(effectControls, 'DisplacementMapLayer').onChange(function (value) {
-                maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1);
+            shaderGUI.add(effectProperties, 'DisplacementMapURL').onChange(function (value) {
+                maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapURL, uniforms.iChannel1, 1);
             });
-            shaderGUI.add(effectControls, 'imageURL').onChange(function (value) {
-                gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
+            shaderGUI.add(effectProperties, 'imageURL').onChange(function (value) {
+                gameImage = loadTextureForUnifrom(effectProperties.imageURL, uniforms.iChannel0, 2);
             });
-            shaderGUI.add(effectControls, 'MaxHorizontalDisplacement', -1.0, 1.0);
-            shaderGUI.add(effectControls, 'MaxVerticalDisplacement', -1.0, 1.0);
-            shaderGUI.add(effectControls, 'wrapPixelsAround').onChange((value) => {
+            shaderGUI.add(effectProperties, 'MaxHorizontalDisplacement', -1.0, 1.0);
+            shaderGUI.add(effectProperties, 'MaxVerticalDisplacement', -1.0, 1.0);
+            shaderGUI.add(effectProperties, 'wrapPixelsAround').onChange((value) => {
                 uniforms.u_wrapPixelsAround.value = value;
             });
+            shaderGUI.add(effectProperties, 'MapBehaviour', { Tile: 1, Stretch: 2, Center: 3 })
+                .onChange((value) => {
+                    uniforms.u_mapBehaviour.value = value;
+                });
 
-            imageGUI.add(effectControls, 'imageScale',  1.0, 5.0).onChange((value) => {
-                uniforms.u_imageScale.value = 1.0 / value;
-                if(effectControls.fitCanvasToImage == true){
+            imageGUI.add(effectProperties, 'imageScale',  1.0, 5.0).onChange((value) => {
+                uniforms.u_imageScale.value = 1.0 / value; //TODO remove value 
+                if(effectProperties.fitCanvasToImage == true){
                     UpdateCanvasSize();
                 }
             });
 
             var canvasWidthUI = canvasGUI
-                .add(effectControls, 'canvasWidth', 10.0, 3840.0)
+                .add(effectProperties, 'canvasWidth', 10.0, 3840.0)
                 .listen()
                 .onChange((value) => {               
                     UpdateCanvasSize();
                     });
 
             var canvasHeightUI = canvasGUI
-                .add(effectControls, 'canvasHeight',  10.0, 2160.0)
+                .add(effectProperties, 'canvasHeight',  10.0, 2160.0)
                 .listen().onChange((value) => {
                     UpdateCanvasSize();
                     });
 
-            canvasGUI.add(effectControls, 'fitCanvasToImage').onChange((checked) => {
+            canvasGUI.add(effectProperties, 'fitCanvasToImage').onChange((checked) => {
                 if(checked) {
-                    effectControls.canvasHeight = gameImage.image.height;
-                    effectControls.canvasWidth = gameImage.image.width;      
+                    effectProperties.canvasHeight = gameImage.image.height;
+                    effectProperties.canvasWidth = gameImage.image.width;      
                     canvasHeightUI.domElement.style.pointerEvents = "none";
                     canvasWidthUI.domElement.style.pointerEvents = "none";
                     UpdateCanvasSize();
@@ -168,16 +204,16 @@
                 }
             });
 
-            videoGUI.add(effectControls, 'videoAsMask').onChange((value) => {
+            videoGUI.add(effectProperties, 'videoAsMask').onChange((value) => {
                 if(value == false) {
-                    maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1);
+                    maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapURL, uniforms.iChannel1, 1);
                 } else {
                     videoPlaying = false;
                 }
             });
-            videoGUI.add(effectControls, 'videoAsImage').onChange((value) => {
+            videoGUI.add(effectProperties, 'videoAsImage').onChange((value) => {
                 if(value == false) {
-                    gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
+                    gameImage = loadTextureForUnifrom(effectProperties.imageURL, uniforms.iChannel0, 2);
                 } else {
                     videoPlaying = false;
                 }
@@ -198,11 +234,13 @@
                 u_time: { type: "1f", value: 0 },
                 u_resolution: { type: 'v2', value: new THREE.Vector2() },
                 u_displacement: { type: 'v2', value: new THREE.Vector2() },
-                u_wrapPixelsAround: { type: 'bool', value: effectControls.wrapPixelsAround },
+                u_wrapPixelsAround: { type: 'bool', value: effectProperties.wrapPixelsAround },
                 iChannel0: { type: 'sampler2D', value: null },
                 iChannel1: { type: 'sampler2D', value: null },
                 u_imageSize: {type: 'v2', value: new THREE.Vector2()},
                 u_imageScale: { type: "1f", value: 1.0 },
+                u_maskSize: {type: 'v2', value: new THREE.Vector2()},
+                u_mapBehaviour: {type: 'int', value: 2.0}
             };
 
             uniforms.u_displacement.value.x = 0.1;
@@ -214,11 +252,11 @@
             //HALF IMAGE
             //var maskImage = new THREE.TextureLoader().load( "https://i.ibb.co/kGF0sMW/Untitled.png" );
             //1/3 IMAGE  
-            maskImage = loadTextureForUnifrom(effectControls.DisplacementMapLayer, uniforms.iChannel1);
+            maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapURL, uniforms.iChannel1, 1);
             //ORIGINAL
             //var gameImage = new THREE.TextureLoader().load( "https://raw.githubusercontent.com/OmarShehata/Using-Displacement-Shaders-to-Create-an-Underwater-Effect/master/assets/game_screenshot.png" );
             //1ST USED IMAGE
-            gameImage = loadTextureForUnifrom(effectControls.imageURL, uniforms.iChannel0);
+            gameImage = loadTextureForUnifrom(effectProperties.imageURL, uniforms.iChannel0, 2);
             //gameImage = new THREE.TextureLoader().load( text.imageURL );
             //MAN IMAGE https://i.ibb.co/h1pZRzR/Capture.png
 
@@ -255,9 +293,18 @@
         // }
 
         function UpdateCanvasSize () {
-            renderer.setSize(effectControls.canvasWidth * effectControls.imageScale, effectControls.canvasHeight*effectControls.imageScale);
-            uniforms.u_resolution.value.x = effectControls.canvasWidth;
-            uniforms.u_resolution.value.y = effectControls.canvasHeight;
+
+            var scale = effectProperties.fitCanvasToImage ? effectProperties.imageScale : 1;
+
+            if( effectProperties.fitCanvasToImage) {
+                renderer.setSize(gameImage.image.width * scale, gameImage.image.height*scale);   
+            }
+            else {
+                renderer.setSize(effectProperties.canvasWidth, effectProperties.canvasHeight);
+            }
+            
+            uniforms.u_resolution.value.x = effectProperties.canvasWidth * scale;
+            uniforms.u_resolution.value.y = effectProperties.canvasHeight * scale;
         }
 
         var fps = 30;
@@ -276,10 +323,10 @@
                 playPromise.then(function() {
                     videoPlaying = true;
                     videoElement.play();
-                    if(effectControls.videoAsImage) {
+                    if(effectProperties.videoAsImage) {
                         gameImage = new THREE.VideoTexture(videoElement);
                     }
-                    if(effectControls.videoAsMask) {
+                    if(effectProperties.videoAsMask) {
                         maskImage = new THREE.VideoTexture(videoElement);
                     }
                 }).catch(function(error) {
@@ -293,11 +340,11 @@
                 then = now - (delta % interval);
                 
                 if(videoPlaying) {
-                    if(effectControls.videoAsImage) {
+                    if(effectProperties.videoAsImage) {
                         uniforms.iChannel0.value = gameImage;
                         uniforms.iChannel0.needsUpdate = true;
                     }
-                    if(effectControls.videoAsMask) {
+                    if(effectProperties.videoAsMask) {
                         uniforms.iChannel1.value = maskImage;
                         uniforms.iChannel1.needsUpdate = true;
                     }
@@ -307,8 +354,8 @@
         }
 
         function render() {
-            uniforms.u_displacement.value.x = effectControls.MaxHorizontalDisplacement;
-            uniforms.u_displacement.value.y = effectControls.MaxVerticalDisplacement;
+            uniforms.u_displacement.value.x = effectProperties.MaxHorizontalDisplacement;
+            uniforms.u_displacement.value.y = effectProperties.MaxVerticalDisplacement;
             uniforms.u_time.value += 0.05;
             renderer.render( scene, camera );
         }
