@@ -10,15 +10,17 @@
             width: 100%;
             height: 100%;
         }
+
+        body {
+            overflow-y: scroll;
+        }
     </style>
 </head>
 
 <body>
     <div id="container"></div>
-    <video id="video" loop crossOrigin="anonymous" webkit-playsinline style="display:none"
-    muted="muted"
-    >
-      <source src="https://vjs.zencdn.net/v/oceans.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'>
+    <video id="video" loop crossOrigin="anonymous" webkit-playsinline style="display:none" muted="muted">
+        <source src="https://vjs.zencdn.net/v/oceans.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'>
     </video>
     <script src="js/three.min.js"></script>
     <script src="js/dat.gui.min.js"></script>
@@ -144,7 +146,7 @@
                 uniform.value = texture;
                 uniform.needsUpdate = true;
                 texture.minFilter = THREE.NearestFilter;
-                if(type == 2) {
+                if (type == 2) {
                     uniforms.u_imageSize.value = new THREE.Vector2(texture.image.width, texture.image.height);
                 }
                 else if (type == 1) {
@@ -175,7 +177,7 @@
         };
 
         var container;
-        var videoElement, playPromise; 
+        var videoElement, playPromise;
         var videoPlaying = false;
         var camera, scene, renderer;
         var uniforms;
@@ -219,7 +221,7 @@
             });
             imageGUI.add(effectProperties, 'imageScale',  1.0, 5.0).onChange((value) => {
                 uniforms.u_imageScale.value = 1.0 / value; //TODO remove value 
-                if(effectProperties.fitCanvasToImage == true){
+                if (effectProperties.fitCanvasToImage == true) {
                     UpdateCanvasSize();
                 }
             });
@@ -227,20 +229,20 @@
             var canvasWidthUI = canvasGUI
                 .add(effectProperties, 'canvasWidth', 10.0, 3840.0)
                 .listen()
-                .onChange((value) => {               
+                .onChange((value) => {
                     UpdateCanvasSize();
-                    });
+                });
 
             var canvasHeightUI = canvasGUI
-                .add(effectProperties, 'canvasHeight',  10.0, 2160.0)
+                .add(effectProperties, 'canvasHeight', 10.0, 2160.0)
                 .listen().onChange((value) => {
                     UpdateCanvasSize();
-                    });
+                });
 
             canvasGUI.add(effectProperties, 'fitCanvasToImage').onChange((checked) => {
-                if(checked) {
+                if (checked) {
                     effectProperties.canvasHeight = gameImage.image.height;
-                    effectProperties.canvasWidth = gameImage.image.width;      
+                    effectProperties.canvasWidth = gameImage.image.width;
                     canvasHeightUI.domElement.style.pointerEvents = "none";
                     canvasWidthUI.domElement.style.pointerEvents = "none";
                     UpdateCanvasSize();
@@ -274,14 +276,14 @@
         }
 
         function init() {
-            container = document.getElementById( 'container' );
+            container = document.getElementById('container');
 
             camera = new THREE.Camera();
             camera.position.z = 1;
 
             scene = new THREE.Scene();
 
-            var geometry = new THREE.PlaneBufferGeometry( 2, 2 );
+            var geometry = new THREE.PlaneBufferGeometry(2, 2);
 
             uniforms = {
                 u_time: { type: "1f", value: 0 },
@@ -321,22 +323,22 @@
             videoElement = document.getElementById('video');
             playPromise = videoElement.play();
 
-            var material = new THREE.ShaderMaterial( {
+            var material = new THREE.ShaderMaterial({
                 uniforms: uniforms,
                 //vertexShader: document.getElementById( 'vertexShader' ).textContent, //vertex
-                fragmentShader: document.getElementById( 'fragmentShader' ).textContent //pixel
-            } );
+                fragmentShader: document.getElementById('fragmentShader').textContent //pixel
+            });
 
             //testing purpose
             //var material = new THREE.MeshBasicMaterial ( { map: gameImage});
 
-            var mesh = new THREE.Mesh( geometry, material );
-            scene.add( mesh );
+            var mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
 
             renderer = new THREE.WebGLRenderer();
-            renderer.setPixelRatio( window.devicePixelRatio );
+            renderer.setPixelRatio(window.devicePixelRatio);
 
-            container.appendChild( renderer.domElement );
+            container.appendChild(renderer.domElement);
 
             UpdateCanvasSize();
             //onWindowResize();
@@ -350,17 +352,17 @@
         //     uniforms.u_resolution.value.y = renderer.domElement.height;
         // }
 
-        function UpdateCanvasSize () {
+        function UpdateCanvasSize() {
 
             var scale = effectProperties.fitCanvasToImage ? effectProperties.imageScale : 1;
 
-            if( effectProperties.fitCanvasToImage) {
-                renderer.setSize(gameImage.image.width * scale, gameImage.image.height*scale);   
+            if (effectProperties.fitCanvasToImage) {
+                renderer.setSize(gameImage.image.width * scale, gameImage.image.height * scale);
             }
             else {
                 renderer.setSize(effectProperties.canvasWidth, effectProperties.canvasHeight);
             }
-            
+
             uniforms.u_resolution.value.x = effectProperties.canvasWidth * scale;
             uniforms.u_resolution.value.y = effectProperties.canvasHeight * scale;
         }
@@ -368,7 +370,7 @@
         var fps = 30;
         var now;
         var then = Date.now();
-        var interval = 1000/fps;
+        var interval = 1000 / fps;
         var delta;
 
         function animate() {
@@ -378,17 +380,17 @@
             now = Date.now();
             delta = now - then;
 
-            if (playPromise !== undefined && !videoPlaying) {            
-                playPromise.then(function() {
+            if (playPromise !== undefined && !videoPlaying) {
+                playPromise.then(function () {
                     videoPlaying = true;
                     videoElement.play();
-                    if(effectProperties.videoAsImage) {
+                    if (effectProperties.videoAsImage) {
                         gameImage = new THREE.VideoTexture(videoElement);
                     }
-                    if(effectProperties.videoAsMask) {
+                    if (effectProperties.videoAsMask) {
                         maskImage = new THREE.VideoTexture(videoElement);
                     }
-                }).catch(function(error) {
+                }).catch(function (error) {
                     //TODO: add an UI to manual playing
                     console.log("play not ready");
                 });
@@ -416,7 +418,7 @@
             uniforms.u_displacement.value.x = effectProperties.MaxHorizontalDisplacement;
             uniforms.u_displacement.value.y = effectProperties.MaxVerticalDisplacement;
             uniforms.u_time.value += 0.05;
-            renderer.render( scene, camera );
+            renderer.render(scene, camera);
         }
     </script>
 </body>
