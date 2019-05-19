@@ -28,6 +28,7 @@
 
         uniform sampler2D u_image;
         uniform sampler2D u_filter;
+        uniform sampler2D u_mouseImage;
         uniform vec2 u_mouse;
         uniform vec2 u_resolution;
         uniform vec2 u_displacement;
@@ -36,6 +37,7 @@
         uniform vec2 u_imageSize;
         uniform float u_imageScale;
         uniform vec2 u_maskSize;
+        uniform vec2 u_mouseSize;
         uniform int u_mapBehaviour;
 
         struct MapBehaviour
@@ -59,19 +61,42 @@
             return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
         }
 
+        float CalcMouseLayerDist () {
+
+            vec2 distanceToMouse = gl_FragCoord.xy - u_mouse;
+            float brightnessMouse = 1.0;
+
+            if(abs(distanceToMouse.x) < u_mouseSize.x/(2.0) && abs(distanceToMouse.y) < u_mouseSize.y/(2.0)) {
+        
+                //calc pixel coordinates to use
+                vec2 pixelCoord = vec2 (0.5) + distanceToMouse/u_mouseSize.xy;
+
+                //find pixel color
+                vec4 mouseColor = texture2D(u_mouseImage, pixelCoord, 1.0);
+
+                //calc pixel brightness
+                vec3 mouseHSV = rgb2hsv(vec3(mouseColor.r, mouseColor.g, mouseColor.b));
+
+                brightnessMouse = 1.0 - mouseHSV.z;
+            }
+            return brightnessMouse;
+        }
+
         void main( void ) {
 
             //left bottom corner image
             //vec2 screenUVoffSet = vec2(0.0);
-            
+
             //center image offset
             vec2 screenUVoffSet = u_resolution.xy*u_imageScale/2.0 - u_imageSize.xy/2.0;
 
             //calc screenUV
             vec2 screenUV = (gl_FragCoord.xy * u_imageScale - screenUVoffSet ) / u_imageSize.xy;
             
-            //"step" to make a perfect circle
-            vec2 distanceToMouse = step(vec2(0.2), distance(gl_FragCoord.xy, u_mouse) / u_resolution.xy);
+            float mouseLayerDistortion = 1.0;
+            if(u_mouseSize.x > 0.0 ) {
+                mouseLayerDistortion = CalcMouseLayerDist();
+            }
 
             vec4 maskColor;
             //Tile: 1, Stretch: 2, Center: 3 
@@ -99,10 +124,10 @@
             float brightness = 1.0 - maskHSV.z;
 
             //calculate pixel-to-mimic position
-            vec2 texturePositionToUse =  screenUV + vec2(brightness-0.5)*u_displacement*distanceToMouse;
-            
+            vec2 texturePositionToUse =  screenUV + vec2(brightness-0.5)*u_displacement*mouseLayerDistortion;
+
             bool pixelOutsideImage = texturePositionToUse.x > 1.0 || texturePositionToUse.x < 0.0 || texturePositionToUse.y > 1.0 ||  texturePositionToUse.y < 0.0;
-            
+
             if(u_wrapPixelsAround || !pixelOutsideImage) {
                 gl_FragColor =  texture2D(u_image, fract(texturePositionToUse));
             } else {
@@ -125,6 +150,9 @@
                 else if (type == 1) {
                     uniforms.u_maskSize.value = new THREE.Vector2(texture.image.width, texture.image.height);
                 }
+                else if(type == 3) {
+                    uniforms.u_mouseSize.value = new THREE.Vector2(texture.image.width, texture.image.height);
+                }
                 else {
                     //size is not needed
                 }
@@ -143,6 +171,7 @@
             this.fitCanvasToImage = false;
             this.imageScale = 1.0;
             this.MapBehaviour = 2;
+            this.mouseImageURL ="https://i.ibb.co/PjCRwfv/77113.png";
         };
 
         var container;
@@ -152,7 +181,7 @@
         var uniforms;
         var effectProperties = new EffectProperties();
         var gui = new dat.GUI();
-        var maskImage, gameImage;
+        var maskImage, gameImage, mouseImage;
 
         init();
         animate();
@@ -162,10 +191,12 @@
             var videoGUI = gui.addFolder('Video');
             var canvasGUI = gui.addFolder('Canvas');
             var imageGUI = gui.addFolder('Image');
+            var mouseGUI = gui.addFolder('Mouse');
 
             shaderGUI.open();
             canvasGUI.open();
             imageGUI.open();
+            mouseGUI.open();
 
             shaderGUI.add(effectProperties, 'DisplacementMapURL').onChange(function (value) {
                 maskImage = loadTextureForUnifrom(effectProperties.DisplacementMapURL, uniforms.u_filter, 1);
@@ -183,6 +214,9 @@
                     uniforms.u_mapBehaviour.value = value;
                 });
 
+            mouseGUI.add(effectProperties, 'mouseImageURL').onChange(function (value) {
+                    mouseImage = loadTextureForUnifrom(effectProperties.mouseImageURL, uniforms.u_mouseImage, 3);
+            });
             imageGUI.add(effectProperties, 'imageScale',  1.0, 5.0).onChange((value) => {
                 uniforms.u_imageScale.value = 1.0 / value; //TODO remove value 
                 if(effectProperties.fitCanvasToImage == true){
@@ -256,11 +290,13 @@
                 u_wrapPixelsAround: { type: 'bool', value: effectProperties.wrapPixelsAround },
                 u_image: { type: 'sampler2D', value: null },
                 u_filter: { type: 'sampler2D', value: null },
+                u_mouseImage: {type:'sampler2D', value: null},
                 u_imageSize: {type: 'v2', value: new THREE.Vector2()},
                 u_imageScale: { type: "1f", value: 1.0 },
                 u_maskSize: {type: 'v2', value: new THREE.Vector2()},
                 u_mapBehaviour: {type: 'int', value: 2.0},
-                u_mouse: {type: 'v2', value: new THREE.Vector2()}
+                u_mouse: {type: 'v2', value: new THREE.Vector2()},
+                u_mouseSize: {type: 'v2', value: new THREE.Vector2()}
             };
 
             uniforms.u_displacement.value.x = 0.1;
@@ -279,6 +315,8 @@
             gameImage = loadTextureForUnifrom(effectProperties.imageURL, uniforms.u_image, 2);
             //gameImage = new THREE.TextureLoader().load( text.imageURL );
             //MAN IMAGE https://i.ibb.co/h1pZRzR/Capture.png
+            //MOUSE IMAGE: https://i.ibb.co/B2Dbjch/77113.jpg
+            mouseImage = loadTextureForUnifrom(effectProperties.mouseImageURL, uniforms.u_mouseImage,3);
 
             videoElement = document.getElementById('video');
             playPromise = videoElement.play();
