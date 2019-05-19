@@ -38,6 +38,15 @@
         uniform vec2 u_maskSize;
         uniform int u_mapBehaviour;
 
+        struct MapBehaviour
+        {
+            int Tile;
+            int Stretch;
+            int Center;
+        };
+
+        MapBehaviour mapBehaviour = MapBehaviour (1,2,3);
+
         // All components are in the range [0…1], including hue.
         vec3 rgb2hsv(vec3 c)
         {
@@ -66,14 +75,14 @@
 
             vec4 maskColor;
             //Tile: 1, Stretch: 2, Center: 3 
-            if(u_mapBehaviour == 1) {
+            if(u_mapBehaviour == mapBehaviour.Tile) {
                 vec2 maskUV = gl_FragCoord.xy / u_maskSize.xy;
                 maskColor = texture2D(u_filter, fract(maskUV) , 1.0);
             }
-            else if(u_mapBehaviour == 2) {
+            else if(u_mapBehaviour == mapBehaviour.Stretch) {
                 maskColor = texture2D(u_filter,  screenUV, 1.0);
             }
-            else if(u_mapBehaviour == 3) {
+            else if(u_mapBehaviour == mapBehaviour.Center) {
                 //vec2 maskUV = gl_FragCoord.xy / u_maskSize.xy;
                 vec2 maskUVoffSet = u_resolution.xy/2.0 - u_maskSize.xy/2.0;
 
