@@ -140,7 +140,7 @@
             //find pixel color mask depending on choosen behaviour
             maskColor = CalcMaskColor(screenUV);
 
-            //convert to HSV
+            //convert mask color from RGB to HSV
             vec3 maskHSV = rgb2hsv(vec3(maskColor.r, maskColor.g, maskColor.b));
 
             float brightness = 1.0 - maskHSV.z;
