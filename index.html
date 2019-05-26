@@ -100,20 +100,10 @@
             return brightnessMouse;
         }
 
-        void main( void ) {
-
-            //left bottom corner image
-            //vec2 screenUVoffSet = vec2(0.0);
-
-            //center image offset
-            vec2 screenUVoffSet = u_resolution.xy*u_imageScale/2.0 - u_imageSize.xy/2.0;
-
-            //calc screenUV
-            vec2 screenUV = (gl_FragCoord.xy * u_imageScale - screenUVoffSet ) / u_imageSize.xy;
-            
-            float mouseLayerDistortion = CalcMouseLayerDist();
+        vec4 CalcMaskColor (vec2 screenUV) {
 
             vec4 maskColor;
+
             if(u_mapBehaviour == mapBehaviour.Tile) {
                 vec2 maskUV = gl_FragCoord.xy / u_maskSize.xy;
                 maskColor = texture2D(u_filter, fract(maskUV) , 1.0);
@@ -122,15 +112,33 @@
                 maskColor = texture2D(u_filter,  screenUV, 1.0);
             }
             else if(u_mapBehaviour == mapBehaviour.Center) {
-                //vec2 maskUV = gl_FragCoord.xy / u_maskSize.xy;
                 vec2 maskUVoffSet = u_resolution.xy/2.0 - u_maskSize.xy/2.0;
-
                 vec2 maskUV = (gl_FragCoord.xy - maskUVoffSet) / u_maskSize.xy;
                 maskColor = texture2D(u_filter, maskUV , 1.0);
             }
             else {
                 maskColor = texture2D(u_image,  screenUV*u_imageScale, 1.0);
             }
+
+            return maskColor;
+        }
+
+        void main( void ) {
+
+            vec4 maskColor;
+            float mouseLayerDistortion;
+
+            //center image offset
+            vec2 screenUVoffSet = u_resolution.xy*u_imageScale/2.0 - u_imageSize.xy/2.0;
+
+            //calc screenUV
+            vec2 screenUV = (gl_FragCoord.xy * u_imageScale - screenUVoffSet ) / u_imageSize.xy;
+            
+            //distortion caused by mouse filter
+            mouseLayerDistortion = CalcMouseLayerDist();
+
+            //find pixel color mask depending on choosen behaviour
+            maskColor = CalcMaskColor(screenUV);
 
             //convert to HSV
             vec3 maskHSV = rgb2hsv(vec3(maskColor.r, maskColor.g, maskColor.b));
