@@ -39,7 +39,7 @@
         uniform vec2 u_imageSize;
         uniform float u_imageScale;
         uniform vec2 u_maskSize;
-        uniform vec2 u_mouseSize;
+        uniform vec2 u_mouseFilterSize;
         uniform int u_mapBehaviour;
 
         struct MapBehaviour
@@ -63,15 +63,26 @@
             return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
         }
 
-        float CalcMouseLayerDist () {
+        bool isInsideMouseArea() {
 
             vec2 distanceToMouse = gl_FragCoord.xy - u_mouse;
-            float brightnessMouse = 1.0;
 
-            if(abs(distanceToMouse.x) < u_mouseSize.x/(2.0) && abs(distanceToMouse.y) < u_mouseSize.y/(2.0)) {
+            if(abs(distanceToMouse.x) < u_mouseFilterSize.x/(2.0) && abs(distanceToMouse.y) < u_mouseFilterSize.y/(2.0)) {
+                return true;
+            }
+            return false;
+        }
+
+        float CalcMouseLayerDist () {
+
+            float brightnessMouse = 0.0;
+
+            if(isInsideMouseArea()) {
         
+                vec2 distanceToMouse = gl_FragCoord.xy - u_mouse;
+
                 //calc pixel coordinates to use
-                vec2 pixelCoord = vec2 (0.5) + distanceToMouse/u_mouseSize.xy;
+                vec2 pixelCoord = vec2 (0.5) + distanceToMouse/u_mouseFilterSize.xy;
 
                 //find pixel color
                 vec4 mouseColor = texture2D(u_mouseImage, pixelCoord, 1.0);
@@ -79,7 +90,7 @@
                 //calc pixel brightness
                 vec3 mouseHSV = rgb2hsv(vec3(mouseColor.r, mouseColor.g, mouseColor.b));
 
-                brightnessMouse = 1.0 - mouseHSV.z;
+                brightnessMouse = mouseHSV.z;
             }
             return brightnessMouse;
         }
@@ -95,13 +106,12 @@
             //calc screenUV
             vec2 screenUV = (gl_FragCoord.xy * u_imageScale - screenUVoffSet ) / u_imageSize.xy;
             
-            float mouseLayerDistortion = 1.0;
-            if(u_mouseSize.x > 0.0 ) {
+            float mouseLayerDistortion = 0.0;
+            if(u_mouseFilterSize.x > 0.0 ) {
                 mouseLayerDistortion = CalcMouseLayerDist();
             }
 
             vec4 maskColor;
-            //Tile: 1, Stretch: 2, Center: 3 
             if(u_mapBehaviour == mapBehaviour.Tile) {
                 vec2 maskUV = gl_FragCoord.xy / u_maskSize.xy;
                 maskColor = texture2D(u_filter, fract(maskUV) , 1.0);
@@ -126,7 +136,7 @@
             float brightness = 1.0 - maskHSV.z;
 
             //calculate pixel-to-mimic position
-            vec2 texturePositionToUse =  screenUV + vec2(brightness-0.5)*u_displacement*mouseLayerDistortion;
+            vec2 texturePositionToUse =  screenUV + vec2(brightness-0.5)*u_displacement*vec2(mouseLayerDistortion-0.5);
 
             bool pixelOutsideImage = texturePositionToUse.x > 1.0 || texturePositionToUse.x < 0.0 || texturePositionToUse.y > 1.0 ||  texturePositionToUse.y < 0.0;
 
@@ -153,7 +163,7 @@
                     uniforms.u_maskSize.value = new THREE.Vector2(texture.image.width, texture.image.height);
                 }
                 else if(type == 3) {
-                    uniforms.u_mouseSize.value = new THREE.Vector2(texture.image.width, texture.image.height);
+                    uniforms.u_mouseFilterSize.value = new THREE.Vector2(texture.image.width, texture.image.height);
                 }
                 else {
                     //size is not needed
@@ -173,7 +183,10 @@
             this.fitCanvasToImage = false;
             this.imageScale = 1.0;
             this.MapBehaviour = 2;
-            this.mouseImageURL ="https://i.ibb.co/PjCRwfv/77113.png";
+            //this.mouseImageURL ="https://i.ibb.co/PjCRwfv/77113.png";
+            //this.mouseImageURL = "https://i.ibb.co/PYC0h8L/cenas.png";
+            this.mouseImageURL = "https://i.ibb.co/jM4P9qY/3d-illustration-grey-gradient-background-gradient-flat-cg1p63961144c-th.jpg";
+            this.mouseLayer = true;
         };
 
         var container;
@@ -219,6 +232,8 @@
             mouseGUI.add(effectProperties, 'mouseImageURL').onChange(function (value) {
                     mouseImage = loadTextureForUnifrom(effectProperties.mouseImageURL, uniforms.u_mouseImage, 3);
             });
+            mouseGUI.add(effectProperties, 'mouseLayer', true);
+
             imageGUI.add(effectProperties, 'imageScale',  1.0, 5.0).onChange((value) => {
                 uniforms.u_imageScale.value = 1.0 / value; //TODO remove value 
                 if (effectProperties.fitCanvasToImage == true) {
@@ -298,7 +313,7 @@
                 u_maskSize: {type: 'v2', value: new THREE.Vector2()},
                 u_mapBehaviour: {type: 'int', value: 2.0},
                 u_mouse: {type: 'v2', value: new THREE.Vector2()},
-                u_mouseSize: {type: 'v2', value: new THREE.Vector2()}
+                u_mouseFilterSize: {type: 'v2', value: new THREE.Vector2()}
             };
 
             uniforms.u_displacement.value.x = 0.1;
