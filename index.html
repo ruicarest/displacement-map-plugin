@@ -127,12 +127,17 @@
 
             vec4 maskColor;
             float mouseLayerDistortion;
+            float brightness;
+            vec3 maskHSV;
+            vec2 screenUV, screenUVoffSet;
+            vec2 texturePositionToUse;
+            bool pixelOutsideImage;
 
             //center image offset
-            vec2 screenUVoffSet = u_resolution.xy*u_imageScale/2.0 - u_imageSize.xy/2.0;
+            screenUVoffSet = u_resolution.xy*u_imageScale/2.0 - u_imageSize.xy/2.0;
 
             //calc screenUV
-            vec2 screenUV = (gl_FragCoord.xy * u_imageScale - screenUVoffSet ) / u_imageSize.xy;
+            screenUV = (gl_FragCoord.xy * u_imageScale - screenUVoffSet ) / u_imageSize.xy;
             
             //distortion caused by mouse filter
             mouseLayerDistortion = CalcMouseLayerDist();
@@ -141,14 +146,14 @@
             maskColor = CalcMaskColor(screenUV);
 
             //convert mask color from RGB to HSV
-            vec3 maskHSV = rgb2hsv(vec3(maskColor.r, maskColor.g, maskColor.b));
+            maskHSV = rgb2hsv(vec3(maskColor.r, maskColor.g, maskColor.b));
 
-            float brightness = 1.0 - maskHSV.z;
+            brightness = 1.0 - maskHSV.z;
 
             //calculate pixel-to-mimic position
             vec2 texturePositionToUse =  screenUV + vec2(brightness-0.5)*u_displacement*vec2(mouseLayerDistortion-0.5);
 
-            bool pixelOutsideImage = texturePositionToUse.x > 1.0 || texturePositionToUse.x < 0.0 || texturePositionToUse.y > 1.0 ||  texturePositionToUse.y < 0.0;
+            pixelOutsideImage = texturePositionToUse.x > 1.0 || texturePositionToUse.x < 0.0 || texturePositionToUse.y > 1.0 ||  texturePositionToUse.y < 0.0;
 
             if(u_wrapPixelsAround || !pixelOutsideImage) {
                 gl_FragColor =  texture2D(u_image, fract(texturePositionToUse));
