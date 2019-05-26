@@ -77,6 +77,11 @@
 
             float brightnessMouse = 0.0;
 
+            //if no filter available
+            if(u_mouseFilterSize.x == 0.0 ) {
+                return brightnessMouse;
+            }
+
             if(isInsideMouseArea()) {
         
                 vec2 distanceToMouse = gl_FragCoord.xy - u_mouse;
@@ -106,10 +111,7 @@
             //calc screenUV
             vec2 screenUV = (gl_FragCoord.xy * u_imageScale - screenUVoffSet ) / u_imageSize.xy;
             
-            float mouseLayerDistortion = 0.0;
-            if(u_mouseFilterSize.x > 0.0 ) {
-                mouseLayerDistortion = CalcMouseLayerDist();
-            }
+            float mouseLayerDistortion = CalcMouseLayerDist();
 
             vec4 maskColor;
             if(u_mapBehaviour == mapBehaviour.Tile) {
