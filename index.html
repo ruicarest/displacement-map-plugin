@@ -95,8 +95,9 @@
                 //calc pixel brightness
                 vec3 mouseHSV = rgb2hsv(vec3(mouseColor.r, mouseColor.g, mouseColor.b));
 
-                brightnessMouse = mouseHSV.z;
+                brightnessMouse = mouseHSV.z - 0.5;
             }
+            
             return brightnessMouse;
         }
 
@@ -151,7 +152,9 @@
             brightness = 1.0 - maskHSV.z;
 
             //calculate pixel-to-mimic position
-            vec2 texturePositionToUse =  screenUV + vec2(brightness-0.5)*u_displacement*vec2(mouseLayerDistortion-0.5);
+            texturePositionToUse =  screenUV 
+                                    + vec2(brightness-0.5)*u_displacement
+                                    + vec2(mouseLayerDistortion);
 
             pixelOutsideImage = texturePositionToUse.x > 1.0 || texturePositionToUse.x < 0.0 || texturePositionToUse.y > 1.0 ||  texturePositionToUse.y < 0.0;
 
@@ -200,7 +203,8 @@
             this.MapBehaviour = 2;
             //this.mouseImageURL ="https://i.ibb.co/PjCRwfv/77113.png";
             //this.mouseImageURL = "https://i.ibb.co/PYC0h8L/cenas.png";
-            this.mouseImageURL = "https://i.ibb.co/jM4P9qY/3d-illustration-grey-gradient-background-gradient-flat-cg1p63961144c-th.jpg";
+            //this.mouseImageURL = "https://i.ibb.co/jM4P9qY/3d-illustration-grey-gradient-background-gradient-flat-cg1p63961144c-th.jpg";
+            this.mouseImageURL = "https://i.ibb.co/g7tQ4wr/layer-v1.png";
             this.mouseLayer = true;
         };
 
