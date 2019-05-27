@@ -250,7 +250,7 @@
                 });
 
             mouseGUI.add(effectProperties, 'mouseImageURL').onChange(function (value) {
-                    mouseImage = loadTextureForUnifrom(effectProperties.mouseImageURL, uniforms.u_mouseImage, 3);
+                    mouseImage = loadTextureForUnifrom(value, uniforms.u_mouseImage, 3);
             });
             mouseGUI.add(effectProperties, 'hasMouseFilter', true).onChange((value) => {
                 uniforms.u_hasMouseFilter.value = value;
