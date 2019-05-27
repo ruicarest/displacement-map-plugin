@@ -41,6 +41,7 @@
         uniform vec2 u_maskSize;
         uniform vec2 u_mouseFilterSize;
         uniform int u_mapBehaviour;
+        uniform bool u_hasMouseFilter;
 
         struct MapBehaviour
         {
@@ -78,7 +79,7 @@
             float brightnessMouse = 0.0;
 
             //if no filter available
-            if(u_mouseFilterSize.x == 0.0 ) {
+            if(!u_hasMouseFilter) {
                 return brightnessMouse;
             }
 
@@ -205,7 +206,7 @@
             //this.mouseImageURL = "https://i.ibb.co/PYC0h8L/cenas.png";
             //this.mouseImageURL = "https://i.ibb.co/jM4P9qY/3d-illustration-grey-gradient-background-gradient-flat-cg1p63961144c-th.jpg";
             this.mouseImageURL = "https://i.ibb.co/g7tQ4wr/layer-v1.png";
-            this.mouseLayer = true;
+            this.hasMouseFilter = true;
         };
 
         var container;
@@ -251,7 +252,9 @@
             mouseGUI.add(effectProperties, 'mouseImageURL').onChange(function (value) {
                     mouseImage = loadTextureForUnifrom(effectProperties.mouseImageURL, uniforms.u_mouseImage, 3);
             });
-            mouseGUI.add(effectProperties, 'mouseLayer', true);
+            mouseGUI.add(effectProperties, 'hasMouseFilter', true).onChange((value) => {
+                uniforms.u_hasMouseFilter.value = value;
+            });
 
             imageGUI.add(effectProperties, 'imageScale',  1.0, 5.0).onChange((value) => {
                 uniforms.u_imageScale.value = 1.0 / value; //TODO remove value 
@@ -332,7 +335,8 @@
                 u_maskSize: {type: 'v2', value: new THREE.Vector2()},
                 u_mapBehaviour: {type: 'int', value: 2.0},
                 u_mouse: {type: 'v2', value: new THREE.Vector2()},
-                u_mouseFilterSize: {type: 'v2', value: new THREE.Vector2()}
+                u_mouseFilterSize: {type: 'v2', value: new THREE.Vector2()},
+                u_hasMouseFilter: {type: 'bool', value: effectProperties.hasMouseFilter}
             };
 
             uniforms.u_displacement.value.x = 0.1;
