@@ -42,6 +42,7 @@
         uniform vec2 u_mouseFilterSize;
         uniform int u_mapBehaviour;
         uniform bool u_hasMouseFilter;
+        uniform float u_mouseImageScale;
 
         struct MapBehaviour
         {
@@ -68,7 +69,7 @@
 
             vec2 distanceToMouse = gl_FragCoord.xy - u_mouse;
 
-            if(abs(distanceToMouse.x) < u_mouseFilterSize.x/(2.0) && abs(distanceToMouse.y) < u_mouseFilterSize.y/(2.0)) {
+            if(abs(distanceToMouse.x) < u_mouseFilterSize.x/(2.0 * u_mouseImageScale) && abs(distanceToMouse.y) < u_mouseFilterSize.y/(2.0 * u_mouseImageScale)) {
                 return true;
             }
             return false;
@@ -88,7 +89,7 @@
                 vec2 distanceToMouse = gl_FragCoord.xy - u_mouse;
 
                 //calc pixel coordinates to use
-                vec2 pixelCoord = vec2 (0.5) + distanceToMouse/u_mouseFilterSize.xy;
+                vec2 pixelCoord = vec2 (0.5) + distanceToMouse/u_mouseFilterSize.xy*u_mouseImageScale;
 
                 //find pixel color
                 vec4 mouseColor = texture2D(u_mouseImage, pixelCoord, 1.0);
@@ -207,6 +208,7 @@
             //this.mouseImageURL = "https://i.ibb.co/jM4P9qY/3d-illustration-grey-gradient-background-gradient-flat-cg1p63961144c-th.jpg";
             this.mouseImageURL = "https://i.ibb.co/g7tQ4wr/layer-v1.png";
             this.hasMouseFilter = true;
+            this.mouseImageScale = 1.0;
         };
 
         var container;
@@ -254,6 +256,10 @@
             });
             mouseGUI.add(effectProperties, 'hasMouseFilter', true).onChange((value) => {
                 uniforms.u_hasMouseFilter.value = value;
+            });
+
+            mouseGUI.add(effectProperties, 'mouseImageScale',  0.0, 5.0).onChange((value) => {
+                uniforms.u_mouseImageScale.value = 1.0 / value; //TODO remove value 
             });
 
             imageGUI.add(effectProperties, 'imageScale',  1.0, 5.0).onChange((value) => {
@@ -336,7 +342,8 @@
                 u_mapBehaviour: {type: 'int', value: 2.0},
                 u_mouse: {type: 'v2', value: new THREE.Vector2()},
                 u_mouseFilterSize: {type: 'v2', value: new THREE.Vector2()},
-                u_hasMouseFilter: {type: 'bool', value: effectProperties.hasMouseFilter}
+                u_hasMouseFilter: {type: 'bool', value: effectProperties.hasMouseFilter},
+                u_mouseImageScale: {type: "1f", value: 1.0 }
             };
 
             uniforms.u_displacement.value.x = 0.1;
