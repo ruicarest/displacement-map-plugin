@@ -1,4 +1,9 @@
         //type: 1=mask, 2=image
+        
+        var shader = require('./shader.glsl');
+
+        console.log(shader);
+
         var loadTextureForUnifrom = (texture, uniform, type) => {
             return new THREE.TextureLoader().load(texture, function (texture) {
                 uniform.value = texture;
@@ -199,7 +204,7 @@
             var material = new THREE.ShaderMaterial({
                 uniforms: uniforms,
                 //vertexShader: document.getElementById( 'vertexShader' ).textContent, //vertex
-                fragmentShader: document.getElementById('fragmentShader').textContent //pixel
+                fragmentShader: shader //pixel
             });
 
             //testing purpose
