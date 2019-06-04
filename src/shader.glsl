@@ -3,21 +3,21 @@
 precision mediump float;
 #endif
 
-uniform sampler2D u_image;
-uniform sampler2D u_filter;
-uniform sampler2D u_mouseImage;
-uniform vec2 u_mouse;
-uniform vec2 u_resolution;
-uniform vec2 u_displacement;
-uniform float u_time;       // Time in seconds since load
-uniform bool u_wrapPixelsAround;
-uniform vec2 u_imageSize;
-uniform float u_imageScale;
-uniform vec2 u_maskSize;
-uniform vec2 u_mouseFilterSize;
-uniform int u_mapBehaviour;
-uniform bool u_hasMouseFilter;
-uniform float u_mouseImageScale;
+uniform sampler2D u_image;              //Image texture
+uniform sampler2D u_filter;             //Filter mask texture
+uniform sampler2D u_mouseImage;         //Mouse filter mask texture
+uniform vec2 u_mouse;                   //Mouse position
+uniform vec2 u_resolution;              //canvas size
+uniform vec2 u_displacement;            //Displacement magnitude (in x, in y)
+uniform float u_time;                   //Time in seconds since load
+uniform bool u_wrapPixelsAround;        //Flag multiply image on canvas
+uniform vec2 u_imageSize;               //Image size (width, height)
+uniform float u_imageScale;             //Image scale multiplier
+uniform vec2 u_maskSize;                //Filter mask size (width, height)
+uniform vec2 u_mouseFilterSize;         //Mouse filter mask size (width, height)
+uniform int u_mapBehaviour;             //mapBehaviour
+uniform bool u_hasMouseFilter;          //Flag has Mouse mask?
+uniform float u_mouseImageScale;        //Mouse filter mask sclae multiplier
 
 struct MapBehaviour
 {
