@@ -40,7 +40,7 @@ vec3 rgb2hsv(vec3 c)
     return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
 }
 
-bool isInsideMouseArea() {
+bool IsInsideMouseArea() {
 
     vec2 distanceToMouse = gl_FragCoord.xy - u_mouse;
 
@@ -59,7 +59,7 @@ float CalcMouseLayerDist () {
         return brightnessMouse;
     }
 
-    if(isInsideMouseArea()) {
+    if(IsInsideMouseArea()) {
 
         vec2 distanceToMouse = gl_FragCoord.xy - u_mouse;
 

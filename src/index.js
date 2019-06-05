@@ -1,7 +1,5 @@
-
 var shader = require('./shader.glsl');
 
-console.log(shader);
 //type: 1=mask, 2=image, 3=mouse
 var loadTextureForUnifrom = (texture, uniform, type) => {
     return new THREE.TextureLoader().load(texture, function (texture) {
