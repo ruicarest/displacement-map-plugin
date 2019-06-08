@@ -14,11 +14,33 @@
         body {
             overflow-y: scroll;
         }
+
+        #timeline {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            height: 10rem;
+            background-color: #c41818;
+            text-align: center;
+            opacity: 0.5;
+        }
+        #line {
+            width: 0px;
+            height: 200px;
+            border-left: 5px solid rgb(17, 17, 17);
+            position: absolute;
+        }
     </style>
 </head>
 
 <body>
     <div id="container"></div>
+    <div id="timeline">
+        <div id="line"> 
+        </div>
+    </div>
+
     <video id="video" loop crossOrigin="anonymous" webkit-playsinline style="display:none" muted="muted">
         <source src="https://vjs.zencdn.net/v/oceans.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'>
     </video>

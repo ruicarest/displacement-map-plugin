@@ -296,3 +296,10 @@ function render() {
     renderer.render(scene, camera);
 }
 
+var timeline = document.getElementById("timeline");
+var line = document.getElementById("line");
+
+timeline.onmousedown = () => {
+    console.log("User moused down",  event.clientX );
+    line.style.left = event.clientX+"px";
+};
