@@ -298,8 +298,19 @@ function render() {
 
 var timeline = document.getElementById("timeline");
 var line = document.getElementById("line");
-
+var label = document.getElementById("label");
 timeline.onmousedown = () => {
     console.log("User moused down",  event.clientX );
     line.style.left = event.clientX+"px";
 };
+
+timeline.onmousemove = (e) => {
+    label.hidden = false;
+    label.style.left = e.clientX + "px";
+    //label.style.bottom = e.clientY + "px";
+    label.innerHTML = e.clientX;
+}
+
+timeline.onmouseleave = () => {
+    label.hidden = true;
+}

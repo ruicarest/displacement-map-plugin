@@ -21,15 +21,19 @@
             bottom: 0;
             left: 0;
             height: 10rem;
-            background-color: #c41818;
+            background-color: #020202;
             text-align: center;
             opacity: 0.5;
         }
         #line {
             width: 0px;
             height: 200px;
-            border-left: 5px solid rgb(17, 17, 17);
+            border-left: 5px solid rgb(255, 255, 255);
             position: absolute;
+        }
+        #label {
+            position: absolute;
+            color: rgb(255, 255, 255);
         }
     </style>
 </head>
@@ -39,16 +43,13 @@
     <div id="timeline">
         <div id="line"> 
         </div>
+        <div id="label">placeholder</div>
     </div>
-
     <video id="video" loop crossOrigin="anonymous" webkit-playsinline style="display:none" muted="muted">
         <source src="https://vjs.zencdn.net/v/oceans.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'>
     </video>
     <script src="js/three.min.js"></script>
     <script src="js/dat.gui.min.js"></script>
-    <!-- <script id="fragmentShader" type="x-shader/x-fragment">
-        
-    </script> -->
 
     <script src="dist/main.js"></script>
 
