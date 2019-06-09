@@ -296,41 +296,82 @@ function render() {
     renderer.render(scene, camera);
 }
 
+var timeStampMap = new Map();
+
 var timeline = document.getElementById("timeline");
 var line = document.getElementById("line");
 var label = document.getElementById("label");
 var savepoint = document.getElementById("savepoint");
 
+//create new point
 timeline.onmousedown = () => {
     console.log("User moused down",  event.clientX );
     line.style.left = event.clientX+"px";
 };
 
+//show time label
 timeline.onmousemove = (e) => {
     label.hidden = false;
     label.style.left = e.clientX + "px";
     label.innerHTML = e.clientX;
 }
 
-savepoint.onmousedown = (e) => {
-    createDiv(event.clientX);
+//hide time label
+timeline.onmouseleave = () => {
+    label.hidden = true;
 }
 
-var createDiv = function (width) {
+//clicking on "SAVE"
+savepoint.onmousedown = (e) => {
+    createNewPoint(event.clientX);
+}
+
+//Create new point in timeline
+var createNewPoint = function (width) {
+    //is there a point already created?
     if(document.getElementById(width)) {
+        loadSettings(width);
         console.log("point already created");
         return;
     }
-    var iDiv = document.createElement('div');
-    iDiv.id = width;
-    timeline.appendChild(iDiv);
-    iDiv.innerHTML = "RUI";
-    iDiv.style.left = width+"px";
-    iDiv.style.color = "green";
-    iDiv.style.position = "absolute";
+    
+    //create new point div
+    var newDiv = createTimeStampDiv(width);
+    //create new point data
+    var timeStamp = createTimeStampData(width);
+    //add new point to timestamps map
+    timeStampMap.set(width, timeStamp);
 }
 
+//loadSetting on given point
+var loadSettings = function (timeStamp){
+    var settings = timeStampMap.get(timeStamp);
+    effectProperties.MaxHorizontalDisplacement = settings.displacementX;
 }
-timeline.onmouseleave = () => {
-    label.hidden = true;
+
+//create timeStamp method
+var createTimeStampData = (timeStamp) => {
+    return {displacementX: effectProperties.MaxHorizontalDisplacement, displacementY: effectProperties.MaxVerticalDisplacement}
+}
+
+var createTimeStampDiv = (width) => {
+    var newDiv = document.createElement('div');
+    newDiv.id = width;
+    timeline.appendChild(newDiv);
+    newDiv.innerHTML = "RUI";
+
+    //load settings on mouse down
+    newDiv.onmousedown = () => {
+        line.style.left = event.clientX+"px";
+        loadSettings(width);
+        console.log("settings loaded on ", width);
+    };
+
+    //set div style 
+    newDiv.style.left = width+"px";
+    newDiv.style.color = "green";
+    newDiv.style.position = "absolute";
+    newDiv.style.zIndex = 5;
+
+    return newDiv;
 }
