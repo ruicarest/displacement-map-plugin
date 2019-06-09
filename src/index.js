@@ -299,6 +299,8 @@ function render() {
 var timeline = document.getElementById("timeline");
 var line = document.getElementById("line");
 var label = document.getElementById("label");
+var savepoint = document.getElementById("savepoint");
+
 timeline.onmousedown = () => {
     console.log("User moused down",  event.clientX );
     line.style.left = event.clientX+"px";
@@ -307,10 +309,28 @@ timeline.onmousedown = () => {
 timeline.onmousemove = (e) => {
     label.hidden = false;
     label.style.left = e.clientX + "px";
-    //label.style.bottom = e.clientY + "px";
     label.innerHTML = e.clientX;
 }
 
+savepoint.onmousedown = (e) => {
+    createDiv(event.clientX);
+}
+
+var createDiv = function (width) {
+    if(document.getElementById(width)) {
+        console.log("point already created");
+        return;
+    }
+    var iDiv = document.createElement('div');
+    iDiv.id = width;
+    timeline.appendChild(iDiv);
+    iDiv.innerHTML = "RUI";
+    iDiv.style.left = width+"px";
+    iDiv.style.color = "green";
+    iDiv.style.position = "absolute";
+}
+
+}
 timeline.onmouseleave = () => {
     label.hidden = true;
 }
