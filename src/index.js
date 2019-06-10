@@ -287,6 +287,8 @@ function animate() {
         }
     }
     render();
+
+    renderTimeMarker();
 }
 
 function render() {
@@ -299,10 +301,15 @@ function render() {
 //map with all saved positions
 var timeStampMap = new Map();
 
+var timelineState = 0; //0 -> hold | 1 -> play
+var timelineWidth = 0;
+
 var timeline = document.getElementById("timeline");
 var timeMarker = document.getElementById("timeMarker");
 var label = document.getElementById("label");
 var savepoint = document.getElementById("savepoint");
+var playImg = document.getElementById("play");
+var currentTimeMarker = document.getElementById("currentTimeMarker");
 
 //current timelinePosition
 var timelinePosition = 0;
@@ -405,4 +412,27 @@ var createTimeStampDiv = (width) => {
     newDiv.appendChild(pointImgDel);
 
     return newDiv;
+}
+
+playImg.onmousedown = () => {
+    if(timelineState == 0 ) {
+        console.log("playing");
+        timelineState = 1;
+        playImg.setAttribute("src", "../images/pause.png");
+    }
+    else if (timelineState == 1 ) {
+        console.log("pause");
+        timelineState = 0;
+        playImg.setAttribute("src", "../images/play.png");
+        //reset timeMarker
+        timelineWidth = 0;
+        currentTimeMarker.style.left = 0;
+    }
+}
+
+function renderTimeMarker () {
+    if(timelineState == 1) {
+        timelineWidth += 1;
+        currentTimeMarker.style.left = timelineWidth+"px";
+    }
 }

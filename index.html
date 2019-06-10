@@ -30,6 +30,13 @@
             bottom: -50px;
             opacity: 0.5;
         }
+        #currentTimeMarker {
+            width: 0px;
+            height: 50px;
+            border-left: 5px solid rgb(175, 31, 31);
+            position: absolute;
+            bottom: -10px;
+        }
         #line {
             height: 0px;
             text-align: center;
@@ -64,7 +71,7 @@
     <div id="container"></div>
     <div id="timeline">
         <div id="options">
-                <img src="images/play.png" height="25px" width="25px"/>
+                <img  id="play" src="images/play.png" height="25px" width="25px"/>
         </div>
         <div id="line"></div>
         <div id="timeMarker"> 
@@ -72,6 +79,7 @@
                 <img src="images/add.png" height="15px" width="15px"/>
             </div>
         </div>
+        <div id="currentTimeMarker"></div>
         <div id="label">0</div>
     </div>
     <video id="video" loop crossOrigin="anonymous" webkit-playsinline style="display:none" muted="muted">
