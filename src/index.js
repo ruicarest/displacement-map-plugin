@@ -353,7 +353,7 @@ function createNewPoint (width) {
     //create new point div
     var newDiv = createTimeStampDiv(width);
     //create new point data
-    var timeStamp = createTimeStampData(width);
+    var timeStamp = createTimeStampData();
     //add new point to timestamps map
     timeStampMap.set(width, timeStamp);
 }
