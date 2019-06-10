@@ -308,7 +308,7 @@ var savepoint = document.getElementById("savepoint");
 var timelinePosition = 0;
 
 //create new point
-timeline.onmousedown = () => {
+line.onmousedown = () => {
     timelinePosition = event.clientX;
     timeMarker.style.left = event.clientX+"px";
 };
