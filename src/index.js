@@ -353,6 +353,11 @@ var loadSettings = function (timeStamp){
     effectProperties.MaxHorizontalDisplacement = settings.displacementX;
 }
 
+var removeTimeStampData = (timeStamp) => {
+    timeStampMap.delete(timeStamp);
+    timeStampMap.has(timeStamp);
+}
+
 //create timeStamp method
 var createTimeStampData = (timeStamp) => {
     return {displacementX: effectProperties.MaxHorizontalDisplacement, displacementY: effectProperties.MaxVerticalDisplacement}
@@ -369,19 +374,35 @@ var createTimeStampDiv = (width) => {
     newDiv.style.zIndex = 5;
     newDiv.style.cursor = "pointer";
 
-    //load settings on mouse down
-    newDiv.onmousedown = () => {
-        timeMarker.style.left = event.clientX+"px";
-        loadSettings(width);
-        console.log("settings loaded on ", width);
-    };
-
     //star icon
     var pointImg = document.createElement('img');
     pointImg.setAttribute("src", "../images/star.png");
     pointImg.setAttribute("height", "15");
     pointImg.setAttribute("width", "15");
+
+    //load settings on mouse down
+    pointImg.onmousedown = () => {
+        timeMarker.style.left = event.clientX+"px";
+        loadSettings(width);
+    };
+
     newDiv.appendChild(pointImg);
+
+    //delete icon
+    var pointImgDel = document.createElement('img');
+    pointImgDel.setAttribute("src", "../images/remove.png");
+    pointImgDel.setAttribute("height", "15");
+    pointImgDel.setAttribute("width", "15");
+    
+    //remove point on mouse down
+    pointImgDel.onmousedown = () => {
+        //remove data
+        removeTimeStampData(width);
+        //remove this div
+        newDiv.parentNode.removeChild(newDiv);
+    }
+
+    newDiv.appendChild(pointImgDel);
 
     return newDiv;
 }
