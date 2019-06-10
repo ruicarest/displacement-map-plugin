@@ -331,7 +331,7 @@ savepoint.onmousedown = (e) => {
 }
 
 //Create new point in timeline
-var createNewPoint = function (width) {
+var createNewPoint = (width) => {
     //is there a point already created?
     if(document.getElementById(width)) {
         loadSettings(width);
@@ -348,7 +348,7 @@ var createNewPoint = function (width) {
 }
 
 //loadSetting on given point
-var loadSettings = function (timeStamp){
+var loadSettings = (timeStamp) => {
     var settings = timeStampMap.get(timeStamp);
     effectProperties.MaxHorizontalDisplacement = settings.displacementX;
 }
