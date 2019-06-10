@@ -399,6 +399,7 @@ function createTimeStampDiv (width) {
 
     //load settings on mouse down
     pointImg.onmousedown = () => {
+        timelinePosition = width;
         timeMarker.style.left = width+"px";
         loadSettings(width);
     };
