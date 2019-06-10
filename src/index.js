@@ -299,14 +299,16 @@ function render() {
 var timeStampMap = new Map();
 
 var timeline = document.getElementById("timeline");
-var line = document.getElementById("line");
+var timeMarker = document.getElementById("timeMarker");
 var label = document.getElementById("label");
 var savepoint = document.getElementById("savepoint");
 
+var timelinePosition = 0;
+
 //create new point
 timeline.onmousedown = () => {
-    console.log("User moused down",  event.clientX );
-    line.style.left = event.clientX+"px";
+    timelinePosition = event.clientX;
+    timeMarker.style.left = event.clientX+"px";
 };
 
 //show time label
@@ -323,7 +325,7 @@ timeline.onmouseleave = () => {
 
 //clicking on "SAVE"
 savepoint.onmousedown = (e) => {
-    createNewPoint(event.clientX);
+    createNewPoint(timelinePosition);
 }
 
 //Create new point in timeline
@@ -358,20 +360,26 @@ var createTimeStampDiv = (width) => {
     var newDiv = document.createElement('div');
     newDiv.id = width;
     timeline.appendChild(newDiv);
-    newDiv.innerHTML = "RUI";
+
+    //set div style 
+    newDiv.style.left = width+"px";
+    newDiv.style.position = "absolute";
+    newDiv.style.zIndex = 5;
+    newDiv.style.cursor = "pointer";
 
     //load settings on mouse down
     newDiv.onmousedown = () => {
-        line.style.left = event.clientX+"px";
+        timeMarker.style.left = event.clientX+"px";
         loadSettings(width);
         console.log("settings loaded on ", width);
     };
 
-    //set div style 
-    newDiv.style.left = width+"px";
-    newDiv.style.color = "green";
-    newDiv.style.position = "absolute";
-    newDiv.style.zIndex = 5;
+    //star icon
+    var pointImg = document.createElement('img');
+    pointImg.setAttribute("src", "../images/star.png");
+    pointImg.setAttribute("height", "15");
+    pointImg.setAttribute("width", "15");
+    newDiv.appendChild(pointImg);
 
     return newDiv;
 }

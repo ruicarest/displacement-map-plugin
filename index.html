@@ -18,27 +18,33 @@
         #timeline {
             position: fixed;
             right: 0;
-            bottom: 0;
+            bottom: 100px;
             left: 0;
-            height: 10rem;
-            background-color: #020202;
-            text-align: center;
+        }
+        #timeMarker {
+            width: 0px;
+            height: 100px;
+            border-left: 5px solid rgb(175, 31, 31);
+            position: absolute;
+            bottom: -50px;
             opacity: 0.5;
         }
         #line {
-            width: 0px;
-            height: 200px;
-            border-left: 5px solid rgb(255, 255, 255);
-            position: absolute;
+            height: 0px;
+            text-align: center;
+            border-top: 5px solid rgb(0, 0, 0);
+            cursor: pointer;
         }
         #savepoint {
-            color: rgb(255, 255, 255);
+            color: rgb(0, 0, 0);
             bottom: -50px;
             position: relative;
+            cursor: pointer;
         }
         #label {
+            bottom: 5px;
             position: absolute;
-            color: rgb(255, 255, 255);
+            color: rgb(2, 1, 1);
         }
     </style>
 </head>
@@ -46,9 +52,10 @@
 <body>
     <div id="container"></div>
     <div id="timeline">
-        <div id="line"> 
+        <div id="line"></div>
+        <div id="timeMarker"> 
             <div id ="savepoint">
-                SAVE
+                <img src="images/add.png" height="15px" width="15px"/>
             </div>
         </div>
         <div id="label">0</div>
