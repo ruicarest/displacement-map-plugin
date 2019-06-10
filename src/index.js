@@ -361,7 +361,7 @@ function createNewPoint (width) {
 //loadSetting on given point
 function loadSettings (timeStamp) {
     var settings = timeStampMap.get(timeStamp);
-    console.log("update");
+    console.log("update", settings.displacementX);
     effectProperties.MaxHorizontalDisplacement = settings.displacementX;
 }
 
@@ -453,6 +453,8 @@ function resetTimeLine() {
     //reset timeMarker
     timelineWidth = 0;
     currentTimeMarker.style.left = 0;
+    currentTimeStamp = 0;
+    nextTimeStamp = 0;
 }
 
 function renderTimeMarker () {
@@ -472,9 +474,11 @@ var nextTimeStamp = 0;
 
 function updateShaderParameters () {
 
-    timeStampMap = new Map ([...timeStampMap.entries()].sort());
+    window.timeStampMap = timeStampMap;
 
-    if(nextTimeStamp <= currentTimeStamp) {
+    sortTimeStampMap();
+
+    if(nextTimeStamp <= timelineWidth) {
         currentTimeStamp = nextTimeStamp;
         nextTimeStamp = findNextTimeStamp();
         console.log(currentTimeStamp, nextTimeStamp);
@@ -483,10 +487,7 @@ function updateShaderParameters () {
     var currentSet = timeStampMap.get(currentTimeStamp);
     var nextSet = timeStampMap.get(nextTimeStamp);
 
-    console.log(currentSet, nextSet);
-
     effectProperties.MaxHorizontalDisplacement = currentSet.displacementX + (nextSet.displacementX - currentSet.displacementX) * (timelineWidth - currentTimeStamp) / (nextTimeStamp - currentTimeStamp);
-    //console.log(effectProperties.MaxHorizontalDisplacement);
 }
 
 function findNextTimeStamp () {
@@ -496,5 +497,26 @@ function findNextTimeStamp () {
             next = key;
         }
     })
-    return next;
+    return next ? next : 0;
+}
+
+function sortTimeStampMap () {
+    // Initialize your keys array
+    var keys = [];
+
+    // Initialize your sorted map object
+    var sortedMap = new Map();
+
+    // put keys in Array
+    timeStampMap.forEach((value, key, map) => {
+        keys.push(key);
+    });
+
+    //build the new sorted map object
+    keys = keys.sort((a,b) => a -b).map(function(key) {
+        sortedMap.set(key, timeStampMap.get(key));
+    });
+
+    timeStampMap = sortedMap;
+    
 }
