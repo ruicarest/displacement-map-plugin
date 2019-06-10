@@ -296,6 +296,7 @@ function render() {
     renderer.render(scene, camera);
 }
 
+//map with all saved positions
 var timeStampMap = new Map();
 
 var timeline = document.getElementById("timeline");
