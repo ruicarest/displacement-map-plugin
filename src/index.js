@@ -341,7 +341,7 @@ savepoint.onmousedown = (e) => {
 var createNewPoint = (width) => {
     //is there a point already created?
     if(document.getElementById(width)) {
-        loadSettings(width);
+        updateSettings(width);
         console.log("point already created");
         return;
     }
@@ -358,6 +358,11 @@ var createNewPoint = (width) => {
 var loadSettings = (timeStamp) => {
     var settings = timeStampMap.get(timeStamp);
     effectProperties.MaxHorizontalDisplacement = settings.displacementX;
+}
+
+//updateSettings on given point
+var updateSettings = (timeStamp) => {
+    timeStampMap.set(timeStamp, createTimeStampData());
 }
 
 var removeTimeStampData = (timeStamp) => {
