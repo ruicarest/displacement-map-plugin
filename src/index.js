@@ -441,6 +441,7 @@ var TIMELINEMAXTIMER = 5.00;
 
 function initTimeLine () {
     createNewPoint(0);
+    createNewPoint(1000);
 }
 
 function updateTimeLineConfig () {
