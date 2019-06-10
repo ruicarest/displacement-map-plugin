@@ -85,8 +85,8 @@ window.onload = function () {
     shaderGUI.add(effectProperties, 'imageURL').onChange(function (value) {
         gameImage = loadTextureForUnifrom(effectProperties.imageURL, uniforms.u_image, 2);
     });
-    shaderGUI.add(effectProperties, 'MaxHorizontalDisplacement', -1.0, 1.0);
-    shaderGUI.add(effectProperties, 'MaxVerticalDisplacement', -1.0, 1.0);
+    shaderGUI.add(effectProperties, 'MaxHorizontalDisplacement', -1.0, 1.0).listen();
+    shaderGUI.add(effectProperties, 'MaxVerticalDisplacement', -1.0, 1.0).listen();
     shaderGUI.add(effectProperties, 'wrapPixelsAround').onChange((value) => {
         uniforms.u_wrapPixelsAround.value = value;
     });
