@@ -261,16 +261,19 @@ function UpdateCanvasSize() {
 
 var fps = 30;
 var now;
-var then = Date.now();
-var interval = 1000 / fps;
-var delta;
+var thenVideo = Date.now();
+var thenTimeline = Date.now();
+var intervalVideo = 1000 / fps;
+var deltaVideo, deltaTimeline;
+var intervalTimeline = 20;
 
 function animate() {
 
     requestAnimationFrame( animate );
 
     now = Date.now();
-    delta = now - then;
+    deltaVideo = now - thenVideo;
+    deltaTimeline = now - thenTimeline;
 
     if (playPromise !== undefined && !videoPlaying) {
         playPromise.then(function () {
@@ -288,9 +291,9 @@ function animate() {
         });
     }
 
-    if (delta > interval) {
+    if (deltaVideo > intervalVideo) {
         //console.log("frame");
-        then = now - (delta % interval);
+        thenVideo = now - (deltaVideo % intervalVideo);
         
         if(videoPlaying) {
             if(effectProperties.videoAsImage) {
@@ -305,7 +308,10 @@ function animate() {
     }
     render();
 
-    renderTimeMarker();
+    if(deltaTimeline > intervalTimeline) { 
+        thenTimeline = now - (deltaTimeline % intervalTimeline);
+        renderTimeMarker();
+    }
 }
 
 function render() {
@@ -459,7 +465,7 @@ function resetTimeLine() {
 
 function renderTimeMarker () {
     if(timelineState == 1) {
-        timePassed += 1;
+        timePassed += 2;
         currentTimeMarker.style.left = timePassed+"px";
         updateShaderParameters();
         //reached the end
