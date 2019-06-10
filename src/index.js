@@ -111,7 +111,7 @@ window.onload = function () {
         if (effectProperties.fitCanvasToImage == true) {
             UpdateCanvasSize();
         }
-    });
+    }).listen();
 
     var canvasWidthUI = canvasGUI
         .add(effectProperties, 'canvasWidth', 10.0, 3840.0)
@@ -317,6 +317,7 @@ function animate() {
 function render() {
     uniforms.u_displacement.value.x = effectProperties.MaxHorizontalDisplacement;
     uniforms.u_displacement.value.y = effectProperties.MaxVerticalDisplacement;
+    uniforms.u_imageScale.value = 1/effectProperties.imageScale;
     uniforms.u_time.value += 0.05;
     renderer.render(scene, camera);
 }
@@ -355,7 +356,6 @@ function createNewPoint (width) {
         console.log("point updated");
         return;
     }
-    
     //create new point div
     createTimeStampDiv(width);
     //create new point data
@@ -365,8 +365,9 @@ function createNewPoint (width) {
 //loadSetting on given point
 function loadSettings (timeStamp) {
     var settings = timeStampMap.get(timeStamp);
-    console.log("update", settings.displacementX);
     effectProperties.MaxHorizontalDisplacement = settings.displacementX;
+    effectProperties.MaxVerticalDisplacement = settings.displacementY;
+    effectProperties.imageScale = settings.imageScale;
 }
 
 //updateSettings on given point
@@ -382,7 +383,11 @@ function removeTimeStampData (timeStamp) {
 
 //create timeStamp method
 function createTimeStampData (timeStamp) {
-    var timeStampData = {displacementX: effectProperties.MaxHorizontalDisplacement, displacementY: effectProperties.MaxVerticalDisplacement}
+    var timeStampData = {
+        displacementX: effectProperties.MaxHorizontalDisplacement, 
+        displacementY: effectProperties.MaxVerticalDisplacement,
+        imageScale: effectProperties.imageScale
+    }
     timeStampMap.set(timeStamp, timeStampData);
 }
 
@@ -494,6 +499,8 @@ function updateShaderParameters () {
     var nextSet = timeStampMap.get(nextTimeStamp);
 
     effectProperties.MaxHorizontalDisplacement = currentSet.displacementX + (nextSet.displacementX - currentSet.displacementX) * (timePassed - currentTimeStamp) / (nextTimeStamp - currentTimeStamp);
+    effectProperties.MaxVerticalDisplacement = currentSet.displacementY + (nextSet.displacementY - currentSet.displacementY) * (timePassed - currentTimeStamp) / (nextTimeStamp - currentTimeStamp);
+    effectProperties.imageScale = currentSet.imageScale + (nextSet.imageScale - currentSet.imageScale) * (timePassed - currentTimeStamp) / (nextTimeStamp - currentTimeStamp);
 }
 
 function findNextTimeStamp () {
