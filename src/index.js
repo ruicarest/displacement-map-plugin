@@ -365,13 +365,14 @@ var updateSettings = (timeStamp) => {
     timeStampMap.set(timeStamp, createTimeStampData());
 }
 
+//remove time stamp
 var removeTimeStampData = (timeStamp) => {
     timeStampMap.delete(timeStamp);
     timeStampMap.has(timeStamp);
 }
 
 //create timeStamp method
-var createTimeStampData = (timeStamp) => {
+var createTimeStampData = () => {
     return {displacementX: effectProperties.MaxHorizontalDisplacement, displacementY: effectProperties.MaxVerticalDisplacement}
 }
 
@@ -394,7 +395,7 @@ var createTimeStampDiv = (width) => {
 
     //load settings on mouse down
     pointImg.onmousedown = () => {
-        timeMarker.style.left = event.clientX+"px";
+        timeMarker.style.left = width+"px";
         loadSettings(width);
     };
 
