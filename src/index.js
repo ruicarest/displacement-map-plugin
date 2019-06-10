@@ -304,6 +304,7 @@ var timeMarker = document.getElementById("timeMarker");
 var label = document.getElementById("label");
 var savepoint = document.getElementById("savepoint");
 
+//current timelinePosition
 var timelinePosition = 0;
 
 //create new point
