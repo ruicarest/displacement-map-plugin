@@ -50,6 +50,20 @@ var effectProperties = new EffectProperties();
 var gui = new dat.GUI();
 var maskImage, gameImage, mouseImage;
 
+//map with all saved positions
+var timeStampMap = new Map();
+
+var timelineState = 0; //0 -> hold | 1 -> play
+var timelineWidth = 0;
+
+var timeline = document.getElementById("timeline");
+var timeMarker = document.getElementById("timeMarker");
+var label = document.getElementById("label");
+var savepoint = document.getElementById("savepoint");
+var playImg = document.getElementById("play");
+var currentTimeMarker = document.getElementById("currentTimeMarker");
+
+
 init();
 animate();
 
@@ -218,6 +232,9 @@ function init() {
     UpdateCanvasSize();
     //onWindowResize();
     //window.addEventListener( 'resize', onWindowResize, false );
+
+    initTimeLine();
+
 }
 
 //deprecated
@@ -298,51 +315,38 @@ function render() {
     renderer.render(scene, camera);
 }
 
-//map with all saved positions
-var timeStampMap = new Map();
-
-var timelineState = 0; //0 -> hold | 1 -> play
-var timelineWidth = 0;
-
-var timeline = document.getElementById("timeline");
-var timeMarker = document.getElementById("timeMarker");
-var label = document.getElementById("label");
-var savepoint = document.getElementById("savepoint");
-var playImg = document.getElementById("play");
-var currentTimeMarker = document.getElementById("currentTimeMarker");
-
 //current timelinePosition
 var timelinePosition = 0;
 
 //create new point
-line.onmousedown = () => {
+line.onmousedown = function (e) {
     timelinePosition = event.clientX;
     timeMarker.style.left = event.clientX+"px";
 };
 
 //show time label
-timeline.onmousemove = (e) => {
+timeline.onmousemove = function (e) {
     label.hidden = false;
     label.style.left = e.clientX + "px";
     label.innerHTML = e.clientX;
 }
 
 //hide time label
-timeline.onmouseleave = () => {
+timeline.onmouseleave = function (e) {
     label.hidden = true;
 }
 
 //clicking on "SAVE"
-savepoint.onmousedown = (e) => {
+savepoint.onmousedown = function (e) {
     createNewPoint(timelinePosition);
 }
 
 //Create new point in timeline
-var createNewPoint = (width) => {
+function createNewPoint (width) {
     //is there a point already created?
     if(document.getElementById(width)) {
         updateSettings(width);
-        console.log("point already created");
+        console.log("point updated");
         return;
     }
     
@@ -355,28 +359,29 @@ var createNewPoint = (width) => {
 }
 
 //loadSetting on given point
-var loadSettings = (timeStamp) => {
+function loadSettings (timeStamp) {
     var settings = timeStampMap.get(timeStamp);
+    console.log("update");
     effectProperties.MaxHorizontalDisplacement = settings.displacementX;
 }
 
 //updateSettings on given point
-var updateSettings = (timeStamp) => {
+function updateSettings (timeStamp) {
     timeStampMap.set(timeStamp, createTimeStampData());
 }
 
 //remove time stamp
-var removeTimeStampData = (timeStamp) => {
+function removeTimeStampData (timeStamp) {
     timeStampMap.delete(timeStamp);
     timeStampMap.has(timeStamp);
 }
 
 //create timeStamp method
-var createTimeStampData = () => {
+function createTimeStampData () {
     return {displacementX: effectProperties.MaxHorizontalDisplacement, displacementY: effectProperties.MaxVerticalDisplacement}
 }
 
-var createTimeStampDiv = (width) => {
+function createTimeStampDiv (width) {
     var newDiv = document.createElement('div');
     newDiv.id = width;
     timeline.appendChild(newDiv);
@@ -420,7 +425,7 @@ var createTimeStampDiv = (width) => {
     return newDiv;
 }
 
-playImg.onmousedown = () => {
+playImg.onmousedown = function (e) {
     if(timelineState == 0 ) {
         console.log("playing");
         timelineState = 1;
@@ -428,17 +433,67 @@ playImg.onmousedown = () => {
     }
     else if (timelineState == 1 ) {
         console.log("pause");
-        timelineState = 0;
-        playImg.setAttribute("src", "../images/play.png");
-        //reset timeMarker
-        timelineWidth = 0;
-        currentTimeMarker.style.left = 0;
+        resetTimeLine();
     }
+}
+
+var TIMELINEMAXTIMER = 5.00;
+
+function initTimeLine () {
+    createNewPoint(0);
+}
+
+function updateTimeLineConfig () {
+}
+
+function resetTimeLine() {
+    timelineState = 0;
+    playImg.setAttribute("src", "../images/play.png");
+    //reset timeMarker
+    timelineWidth = 0;
+    currentTimeMarker.style.left = 0;
 }
 
 function renderTimeMarker () {
     if(timelineState == 1) {
         timelineWidth += 1;
         currentTimeMarker.style.left = timelineWidth+"px";
+        updateShaderParameters();
+        //reached the end
+        if(timelineWidth >= 1000) {
+            resetTimeLine();
+        }
     }
+}
+
+var currentTimeStamp = 0;
+var nextTimeStamp = 0;
+
+function updateShaderParameters () {
+
+    timeStampMap = new Map ([...timeStampMap.entries()].sort());
+
+    if(nextTimeStamp <= currentTimeStamp) {
+        currentTimeStamp = nextTimeStamp;
+        nextTimeStamp = findNextTimeStamp();
+        console.log(currentTimeStamp, nextTimeStamp);
+    }
+
+    var currentSet = timeStampMap.get(currentTimeStamp);
+    var nextSet = timeStampMap.get(nextTimeStamp);
+
+    console.log(currentSet, nextSet);
+
+    effectProperties.MaxHorizontalDisplacement = currentSet.displacementX + (nextSet.displacementX - currentSet.displacementX) * (timelineWidth - currentTimeStamp) / (nextTimeStamp - currentTimeStamp);
+    //console.log(effectProperties.MaxHorizontalDisplacement);
+}
+
+function findNextTimeStamp () {
+    var next = null;
+    timeStampMap.forEach((value, key, map) => {
+        if(key > currentTimeStamp && !next) {
+            next = key;
+        }
+    })
+    return next;
 }
