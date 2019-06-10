@@ -1,4 +1,4 @@
-var shader = require('./shader.glsl');
+var shader = require('./fragmentShader.glsl');
 
 //type: 1=mask, 2=image, 3=mouse
 var loadTextureForUnifrom = (texture, uniform, type) => {
