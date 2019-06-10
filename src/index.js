@@ -54,7 +54,7 @@ var maskImage, gameImage, mouseImage;
 var timeStampMap = new Map();
 
 var timelineState = 0; //0 -> hold | 1 -> play
-var timelineWidth = 0;
+var timePassed = 0;
 
 var timeline = document.getElementById("timeline");
 var timeMarker = document.getElementById("timeMarker");
@@ -351,11 +351,9 @@ function createNewPoint (width) {
     }
     
     //create new point div
-    var newDiv = createTimeStampDiv(width);
+    createTimeStampDiv(width);
     //create new point data
-    var timeStamp = createTimeStampData();
-    //add new point to timestamps map
-    timeStampMap.set(width, timeStamp);
+    createTimeStampData(width);
 }
 
 //loadSetting on given point
@@ -367,7 +365,7 @@ function loadSettings (timeStamp) {
 
 //updateSettings on given point
 function updateSettings (timeStamp) {
-    timeStampMap.set(timeStamp, createTimeStampData());
+    createTimeStampData(timeStamp);
 }
 
 //remove time stamp
@@ -377,8 +375,9 @@ function removeTimeStampData (timeStamp) {
 }
 
 //create timeStamp method
-function createTimeStampData () {
-    return {displacementX: effectProperties.MaxHorizontalDisplacement, displacementY: effectProperties.MaxVerticalDisplacement}
+function createTimeStampData (timeStamp) {
+    var timeStampData = {displacementX: effectProperties.MaxHorizontalDisplacement, displacementY: effectProperties.MaxVerticalDisplacement}
+    timeStampMap.set(timeStamp, timeStampData);
 }
 
 function createTimeStampDiv (width) {
@@ -451,7 +450,7 @@ function resetTimeLine() {
     timelineState = 0;
     playImg.setAttribute("src", "../images/play.png");
     //reset timeMarker
-    timelineWidth = 0;
+    timePassed = 0;
     currentTimeMarker.style.left = 0;
     currentTimeStamp = 0;
     nextTimeStamp = 0;
@@ -459,11 +458,11 @@ function resetTimeLine() {
 
 function renderTimeMarker () {
     if(timelineState == 1) {
-        timelineWidth += 1;
-        currentTimeMarker.style.left = timelineWidth+"px";
+        timePassed += 1;
+        currentTimeMarker.style.left = timePassed+"px";
         updateShaderParameters();
         //reached the end
-        if(timelineWidth >= 1000) {
+        if(timePassed >= 1000) {
             resetTimeLine();
         }
     }
@@ -478,7 +477,7 @@ function updateShaderParameters () {
 
     sortTimeStampMap();
 
-    if(nextTimeStamp <= timelineWidth) {
+    if(nextTimeStamp <= timePassed) {
         currentTimeStamp = nextTimeStamp;
         nextTimeStamp = findNextTimeStamp();
         console.log(currentTimeStamp, nextTimeStamp);
@@ -487,7 +486,7 @@ function updateShaderParameters () {
     var currentSet = timeStampMap.get(currentTimeStamp);
     var nextSet = timeStampMap.get(nextTimeStamp);
 
-    effectProperties.MaxHorizontalDisplacement = currentSet.displacementX + (nextSet.displacementX - currentSet.displacementX) * (timelineWidth - currentTimeStamp) / (nextTimeStamp - currentTimeStamp);
+    effectProperties.MaxHorizontalDisplacement = currentSet.displacementX + (nextSet.displacementX - currentSet.displacementX) * (timePassed - currentTimeStamp) / (nextTimeStamp - currentTimeStamp);
 }
 
 function findNextTimeStamp () {
