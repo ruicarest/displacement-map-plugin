@@ -17,5 +17,10 @@ module.exports = {
 	    	]
 	  	}
 	  	]
-	}
+	},
+	devServer: {
+		// port: 8050,
+		// contentBase: path.resolve(__dirname, ''),
+		// //watchContentBase: true,
+	 } 
 };
