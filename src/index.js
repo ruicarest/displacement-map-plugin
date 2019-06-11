@@ -329,6 +329,7 @@ var timelinePosition = 0;
 line.onmousedown = function (e) {
     timelinePosition = event.clientX;
     timeMarker.style.left = event.clientX+"px";
+    UpdatePreviewShaderParamenters(timelinePosition);
 };
 
 //show time label
@@ -443,6 +444,10 @@ playImg.onmousedown = function (e) {
         console.log("playing");
         timelineState = 1;
         playImg.setAttribute("src", "../images/pause.png");
+        //reset timestamp values
+        currentTimeStamp = 0;
+        nextTimeStamp = 0;
+
     }
     else if (timelineState == 1 ) {
         console.log("pause");
@@ -450,14 +455,9 @@ playImg.onmousedown = function (e) {
     }
 }
 
-var TIMELINEMAXTIMER = 5.00;
-
 function initTimeLine () {
     createNewPoint(0);
     createNewPoint(1000);
-}
-
-function updateTimeLineConfig () {
 }
 
 function resetTimeLine() {
@@ -474,7 +474,7 @@ function renderTimeMarker () {
     if(timelineState == 1) {
         timePassed += 2;
         currentTimeMarker.style.left = timePassed+"px";
-        updateShaderParameters();
+        UpdateRenderShaderParameters();
         //reached the end
         if(timePassed >= 1000) {
             resetTimeLine();
@@ -485,20 +485,44 @@ function renderTimeMarker () {
 var currentTimeStamp = 0;
 var nextTimeStamp = 0;
 
-function updateShaderParameters () {
+function UpdateRenderShaderParameters () {
 
     if(nextTimeStamp <= timePassed) {
         currentTimeStamp = nextTimeStamp;
         nextTimeStamp = findNextTimeStamp();
         console.log(currentTimeStamp, nextTimeStamp);
     }
+    UpdateShaderParameters(timePassed);
+}
+
+function UpdatePreviewShaderParamenters (elapsedTime) {
+
+    // put keys in Array
+    var keys = [];
+    timeStampMap.forEach((value, key, map) => {
+        keys.push(key);
+    });
+
+    //find next and current timestamp
+    for (let i = 0; i < keys.length; i++) {
+        if (keys[i] > elapsedTime) {
+            nextTimeStamp = keys[i];
+            currentTimeStamp = keys[i-1];
+            console.log(currentTimeStamp, nextTimeStamp);
+            break;
+        }
+    }
+    UpdateShaderParameters(elapsedTime);
+}
+
+function UpdateShaderParameters (elapsedTime) {
 
     var currentSet = timeStampMap.get(currentTimeStamp);
     var nextSet = timeStampMap.get(nextTimeStamp);
 
-    effectProperties.MaxHorizontalDisplacement = currentSet.displacementX + (nextSet.displacementX - currentSet.displacementX) * (timePassed - currentTimeStamp) / (nextTimeStamp - currentTimeStamp);
-    effectProperties.MaxVerticalDisplacement = currentSet.displacementY + (nextSet.displacementY - currentSet.displacementY) * (timePassed - currentTimeStamp) / (nextTimeStamp - currentTimeStamp);
-    effectProperties.imageScale = currentSet.imageScale + (nextSet.imageScale - currentSet.imageScale) * (timePassed - currentTimeStamp) / (nextTimeStamp - currentTimeStamp);
+    effectProperties.MaxHorizontalDisplacement = currentSet.displacementX + (nextSet.displacementX - currentSet.displacementX) * (elapsedTime - currentTimeStamp) / (nextTimeStamp - currentTimeStamp);
+    effectProperties.MaxVerticalDisplacement = currentSet.displacementY + (nextSet.displacementY - currentSet.displacementY) * (elapsedTime - currentTimeStamp) / (nextTimeStamp - currentTimeStamp);
+    effectProperties.imageScale = currentSet.imageScale + (nextSet.imageScale - currentSet.imageScale) * (elapsedTime - currentTimeStamp) / (nextTimeStamp - currentTimeStamp);
 }
 
 function findNextTimeStamp () {
