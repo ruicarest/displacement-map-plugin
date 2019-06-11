@@ -360,6 +360,8 @@ function createNewPoint (width) {
     createTimeStampDiv(width);
     //create new point data
     createTimeStampData(width);
+
+    sortTimeStampMap();
 }
 
 //loadSetting on given point
@@ -484,10 +486,6 @@ var currentTimeStamp = 0;
 var nextTimeStamp = 0;
 
 function updateShaderParameters () {
-
-    window.timeStampMap = timeStampMap;
-
-    sortTimeStampMap();
 
     if(nextTimeStamp <= timePassed) {
         currentTimeStamp = nextTimeStamp;
