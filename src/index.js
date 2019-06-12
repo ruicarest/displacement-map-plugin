@@ -350,7 +350,7 @@ savepoint.onmousedown = function (e) {
 }
 
 //Create new point in timeline
-function createNewPoint (width) {
+function createNewPoint (width, isFirst = false) {
     //is there a point already created?
     if(document.getElementById(width)) {
         updateSettings(width);
@@ -358,7 +358,7 @@ function createNewPoint (width) {
         return;
     }
     //create new point div
-    createTimeStampDiv(width);
+    createTimeStampDiv(width, isFirst);
     //create new point data
     createTimeStampData(width);
 
@@ -394,7 +394,7 @@ function createTimeStampData (timeStamp) {
     timeStampMap.set(timeStamp, timeStampData);
 }
 
-function createTimeStampDiv (width) {
+function createTimeStampDiv (width, isFirst) {
     var newDiv = document.createElement('div');
     newDiv.id = width;
     timeline.appendChild(newDiv);
@@ -421,20 +421,22 @@ function createTimeStampDiv (width) {
     newDiv.appendChild(pointImg);
 
     //delete icon
-    var pointImgDel = document.createElement('img');
-    pointImgDel.setAttribute("src", "../images/remove.png");
-    pointImgDel.setAttribute("height", "15");
-    pointImgDel.setAttribute("width", "15");
+    if(!isFirst) {
+        var pointImgDel = document.createElement('img');
+        pointImgDel.setAttribute("src", "../images/remove.png");
+        pointImgDel.setAttribute("height", "15");
+        pointImgDel.setAttribute("width", "15");
     
-    //remove point on mouse down
-    pointImgDel.onmousedown = () => {
-        //remove data
-        removeTimeStampData(width);
-        //remove this div
-        newDiv.parentNode.removeChild(newDiv);
-    }
+        //remove point on mouse down
+        pointImgDel.onmousedown = () => {
+            //remove data
+            removeTimeStampData(width);
+            //remove this div
+            newDiv.parentNode.removeChild(newDiv);
+        }
 
-    newDiv.appendChild(pointImgDel);
+        newDiv.appendChild(pointImgDel);
+    }
 
     return newDiv;
 }
@@ -456,7 +458,7 @@ playImg.onmousedown = function (e) {
 }
 
 function initTimeLine () {
-    createNewPoint(0);
+    createNewPoint(0, true);
     createNewPoint(1000);
 }
 
