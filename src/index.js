@@ -477,6 +477,9 @@ function renderTimeMarker () {
         UpdateRenderShaderParameters();
         //reached the end
         if(timePassed >= 1000) {
+            //reset preview
+            UpdatePreviewShaderParamenters (0);
+            //reset time line bar
             resetTimeLine();
         }
     }
@@ -487,12 +490,23 @@ var nextTimeStamp = 0;
 
 function UpdateRenderShaderParameters () {
 
+    var isLastTimeStamp = false;
+
     if(nextTimeStamp <= timePassed) {
         currentTimeStamp = nextTimeStamp;
         nextTimeStamp = findNextTimeStamp();
+
+        if(nextTimeStamp == 0) {
+            //keep the same till the end
+            nextTimeStamp = currentTimeStamp;
+            isLastTimeStamp = true;
+        }
+
         console.log(currentTimeStamp, nextTimeStamp);
     }
-    UpdateShaderParameters(timePassed);
+    if(!isLastTimeStamp) {
+        UpdateShaderParameters(timePassed);
+    }
 }
 
 function UpdatePreviewShaderParamenters (elapsedTime) {
