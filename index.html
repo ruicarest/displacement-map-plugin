@@ -14,19 +14,80 @@
         body {
             overflow-y: scroll;
         }
+
+        #timeline {
+            position: fixed;
+            width: 1000px;
+            right: 0;
+            bottom: 100px;
+            left: 0;
+            background-color: darkgrey;
+        }
+        #timeMarker {
+            width: 0px;
+            height: 100px;
+            border-left: 5px solid rgb(175, 31, 31);
+            position: absolute;
+            bottom: -50px;
+            opacity: 0.5;
+        }
+        #currentTimeMarker {
+            width: 0px;
+            height: 50px;
+            border-left: 5px solid rgb(175, 31, 31);
+            position: absolute;
+            bottom: -10px;
+        }
+        #line {
+            height: 0px;
+            text-align: center;
+            height: 25px;
+            border: 2px solid rgb(0, 0, 0);
+            cursor: pointer;
+            left: 250px;
+        }
+        #savepoint {
+            color: rgb(0, 0, 0);
+            bottom: -67px;
+            position: relative;
+            cursor: pointer;
+        }
+        #label {
+            bottom: 30px;
+            position: absolute;
+            color: rgb(2, 1, 1);
+        }
+        #options {
+            bottom: 50px;
+            background-color: darkgray;
+            width: 100px;
+            height: 25px;
+            position: absolute;
+
+        }
     </style>
 </head>
 
 <body>
     <div id="container"></div>
+    <div id="timeline">
+        <div id="options">
+                <img  id="play" src="images/play.png" height="25px" width="25px"/>
+        </div>
+        <div id="line"></div>
+        <div id="timeMarker"> 
+            <div id ="savepoint">
+                <img src="images/add.png" height="15px" width="15px"/>
+            </div>
+        </div>
+        <div id="currentTimeMarker"></div>
+        <div id="label">0</div>
+    </div>
     <video id="video" loop crossOrigin="anonymous" webkit-playsinline style="display:none" muted="muted">
         <source src="https://vjs.zencdn.net/v/oceans.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"'>
     </video>
     <script src="js/three.min.js"></script>
     <script src="js/dat.gui.min.js"></script>
-    <!-- <script id="fragmentShader" type="x-shader/x-fragment">
-        
-    </script> -->
 
     <script src="dist/main.js"></script>
 

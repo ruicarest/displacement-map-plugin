@@ -1,4 +1,4 @@
-var shader = require('./shader.glsl');
+var shader = require('./fragmentShader.glsl');
 
 //type: 1=mask, 2=image, 3=mouse
 var loadTextureForUnifrom = (texture, uniform, type) => {
@@ -50,6 +50,20 @@ var effectProperties = new EffectProperties();
 var gui = new dat.GUI();
 var maskImage, gameImage, mouseImage;
 
+//map with all saved positions
+var timeStampMap = new Map();
+
+var timelineState = 0; //0 -> hold | 1 -> play
+var timePassed = 0;
+
+var timeline = document.getElementById("timeline");
+var timeMarker = document.getElementById("timeMarker");
+var label = document.getElementById("label");
+var savepoint = document.getElementById("savepoint");
+var playImg = document.getElementById("play");
+var currentTimeMarker = document.getElementById("currentTimeMarker");
+
+
 init();
 animate();
 
@@ -71,8 +85,8 @@ window.onload = function () {
     shaderGUI.add(effectProperties, 'imageURL').onChange(function (value) {
         gameImage = loadTextureForUnifrom(effectProperties.imageURL, uniforms.u_image, 2);
     });
-    shaderGUI.add(effectProperties, 'MaxHorizontalDisplacement', -1.0, 1.0);
-    shaderGUI.add(effectProperties, 'MaxVerticalDisplacement', -1.0, 1.0);
+    shaderGUI.add(effectProperties, 'MaxHorizontalDisplacement', -1.0, 1.0).listen();
+    shaderGUI.add(effectProperties, 'MaxVerticalDisplacement', -1.0, 1.0).listen();
     shaderGUI.add(effectProperties, 'wrapPixelsAround').onChange((value) => {
         uniforms.u_wrapPixelsAround.value = value;
     });
@@ -97,7 +111,7 @@ window.onload = function () {
         if (effectProperties.fitCanvasToImage == true) {
             UpdateCanvasSize();
         }
-    });
+    }).listen();
 
     var canvasWidthUI = canvasGUI
         .add(effectProperties, 'canvasWidth', 10.0, 3840.0)
@@ -218,6 +232,9 @@ function init() {
     UpdateCanvasSize();
     //onWindowResize();
     //window.addEventListener( 'resize', onWindowResize, false );
+
+    initTimeLine();
+
 }
 
 //deprecated
@@ -244,16 +261,19 @@ function UpdateCanvasSize() {
 
 var fps = 30;
 var now;
-var then = Date.now();
-var interval = 1000 / fps;
-var delta;
+var thenVideo = Date.now();
+var thenTimeline = Date.now();
+var intervalVideo = 1000 / fps;
+var deltaVideo, deltaTimeline;
+var intervalTimeline = 20;
 
 function animate() {
 
     requestAnimationFrame( animate );
 
     now = Date.now();
-    delta = now - then;
+    deltaVideo = now - thenVideo;
+    deltaTimeline = now - thenTimeline;
 
     if (playPromise !== undefined && !videoPlaying) {
         playPromise.then(function () {
@@ -271,9 +291,9 @@ function animate() {
         });
     }
 
-    if (delta > interval) {
+    if (deltaVideo > intervalVideo) {
         //console.log("frame");
-        then = now - (delta % interval);
+        thenVideo = now - (deltaVideo % intervalVideo);
         
         if(videoPlaying) {
             if(effectProperties.videoAsImage) {
@@ -287,12 +307,267 @@ function animate() {
         }
     }
     render();
+
+    if(deltaTimeline > intervalTimeline) { 
+        thenTimeline = now - (deltaTimeline % intervalTimeline);
+        renderTimeMarker();
+    }
 }
 
 function render() {
     uniforms.u_displacement.value.x = effectProperties.MaxHorizontalDisplacement;
     uniforms.u_displacement.value.y = effectProperties.MaxVerticalDisplacement;
+    uniforms.u_imageScale.value = 1/effectProperties.imageScale;
     uniforms.u_time.value += 0.05;
     renderer.render(scene, camera);
 }
 
+//current timelinePosition
+var timelinePosition = 0;
+
+//create new point
+line.onmousedown = function (e) {
+    timelinePosition = event.clientX;
+    timeMarker.style.left = event.clientX+"px";
+    UpdatePreviewShaderParamenters(timelinePosition);
+};
+
+//show time label
+timeline.onmousemove = function (e) {
+    label.hidden = false;
+    label.style.left = e.clientX + "px";
+    label.innerHTML = e.clientX;
+}
+
+//hide time label
+timeline.onmouseleave = function (e) {
+    label.hidden = true;
+}
+
+//clicking on "SAVE"
+savepoint.onmousedown = function (e) {
+    createNewPoint(timelinePosition);
+}
+
+//Create new point in timeline
+function createNewPoint (width, isFirst = false) {
+    //is there a point already created?
+    if(document.getElementById(width)) {
+        updateSettings(width);
+        console.log("point updated");
+        return;
+    }
+    //create new point div
+    createTimeStampDiv(width, isFirst);
+    //create new point data
+    createTimeStampData(width);
+
+    sortTimeStampMap();
+}
+
+//loadSetting on given point
+function loadSettings (timeStamp) {
+    var settings = timeStampMap.get(timeStamp);
+    effectProperties.MaxHorizontalDisplacement = settings.displacementX;
+    effectProperties.MaxVerticalDisplacement = settings.displacementY;
+    effectProperties.imageScale = settings.imageScale;
+}
+
+//updateSettings on given point
+function updateSettings (timeStamp) {
+    createTimeStampData(timeStamp);
+}
+
+//remove time stamp
+function removeTimeStampData (timeStamp) {
+    timeStampMap.delete(timeStamp);
+    timeStampMap.has(timeStamp);
+}
+
+//create timeStamp method
+function createTimeStampData (timeStamp) {
+    var timeStampData = {
+        displacementX: effectProperties.MaxHorizontalDisplacement, 
+        displacementY: effectProperties.MaxVerticalDisplacement,
+        imageScale: effectProperties.imageScale
+    }
+    timeStampMap.set(timeStamp, timeStampData);
+}
+
+function createTimeStampDiv (width, isFirst) {
+    var newDiv = document.createElement('div');
+    newDiv.id = width;
+    timeline.appendChild(newDiv);
+
+    //set div style 
+    newDiv.style.left = width+"px";
+    newDiv.style.position = "absolute";
+    newDiv.style.zIndex = 5;
+    newDiv.style.cursor = "pointer";
+
+    //star icon
+    var pointImg = document.createElement('img');
+    pointImg.setAttribute("src", "../images/star.png");
+    pointImg.setAttribute("height", "15");
+    pointImg.setAttribute("width", "15");
+
+    //load settings on mouse down
+    pointImg.onmousedown = () => {
+        timelinePosition = width;
+        timeMarker.style.left = width+"px";
+        loadSettings(width);
+    };
+
+    newDiv.appendChild(pointImg);
+
+    //delete icon
+    if(!isFirst) {
+        var pointImgDel = document.createElement('img');
+        pointImgDel.setAttribute("src", "../images/remove.png");
+        pointImgDel.setAttribute("height", "15");
+        pointImgDel.setAttribute("width", "15");
+    
+        //remove point on mouse down
+        pointImgDel.onmousedown = () => {
+            //remove data
+            removeTimeStampData(width);
+            //remove this div
+            newDiv.parentNode.removeChild(newDiv);
+        }
+
+        newDiv.appendChild(pointImgDel);
+    }
+
+    return newDiv;
+}
+
+playImg.onmousedown = function (e) {
+    if(timelineState == 0 ) {
+        console.log("playing");
+        timelineState = 1;
+        playImg.setAttribute("src", "../images/pause.png");
+        //reset timestamp values
+        currentTimeStamp = 0;
+        nextTimeStamp = 0;
+
+    }
+    else if (timelineState == 1 ) {
+        console.log("pause");
+        resetTimeLine();
+    }
+}
+
+function initTimeLine () {
+    createNewPoint(0, true);
+    createNewPoint(1000);
+}
+
+function resetTimeLine() {
+    timelineState = 0;
+    playImg.setAttribute("src", "../images/play.png");
+    //reset timeMarker
+    timePassed = 0;
+    currentTimeMarker.style.left = 0;
+    currentTimeStamp = 0;
+    nextTimeStamp = 0;
+}
+
+function renderTimeMarker () {
+    if(timelineState == 1) {
+        timePassed += 2;
+        currentTimeMarker.style.left = timePassed+"px";
+        UpdateRenderShaderParameters();
+        //reached the end
+        if(timePassed >= 1000) {
+            //reset preview
+            UpdatePreviewShaderParamenters (0);
+            //reset time line bar
+            resetTimeLine();
+        }
+    }
+}
+
+var currentTimeStamp = 0;
+var nextTimeStamp = 0;
+
+function UpdateRenderShaderParameters () {
+
+    var isLastTimeStamp = false;
+
+    if(nextTimeStamp <= timePassed) {
+        currentTimeStamp = nextTimeStamp;
+        nextTimeStamp = findNextTimeStamp();
+
+        if(nextTimeStamp == 0) {
+            //keep the same till the end
+            nextTimeStamp = currentTimeStamp;
+            isLastTimeStamp = true;
+        }
+
+        console.log(currentTimeStamp, nextTimeStamp);
+    }
+    if(!isLastTimeStamp) {
+        UpdateShaderParameters(timePassed);
+    }
+}
+
+function UpdatePreviewShaderParamenters (elapsedTime) {
+
+    // put keys in Array
+    var keys = [];
+    timeStampMap.forEach((value, key, map) => {
+        keys.push(key);
+    });
+
+    //find next and current timestamp
+    for (let i = 0; i < keys.length; i++) {
+        if (keys[i] > elapsedTime) {
+            nextTimeStamp = keys[i];
+            currentTimeStamp = keys[i-1];
+            console.log(currentTimeStamp, nextTimeStamp);
+            break;
+        }
+    }
+    UpdateShaderParameters(elapsedTime);
+}
+
+function UpdateShaderParameters (elapsedTime) {
+
+    var currentSet = timeStampMap.get(currentTimeStamp);
+    var nextSet = timeStampMap.get(nextTimeStamp);
+
+    effectProperties.MaxHorizontalDisplacement = currentSet.displacementX + (nextSet.displacementX - currentSet.displacementX) * (elapsedTime - currentTimeStamp) / (nextTimeStamp - currentTimeStamp);
+    effectProperties.MaxVerticalDisplacement = currentSet.displacementY + (nextSet.displacementY - currentSet.displacementY) * (elapsedTime - currentTimeStamp) / (nextTimeStamp - currentTimeStamp);
+    effectProperties.imageScale = currentSet.imageScale + (nextSet.imageScale - currentSet.imageScale) * (elapsedTime - currentTimeStamp) / (nextTimeStamp - currentTimeStamp);
+}
+
+function findNextTimeStamp () {
+    var next = null;
+    timeStampMap.forEach((value, key, map) => {
+        if(key > currentTimeStamp && !next) {
+            next = key;
+        }
+    })
+    return next ? next : 0;
+}
+
+function sortTimeStampMap () {
+    // Initialize your keys array
+    var keys = [];
+
+    // Initialize your sorted map object
+    var sortedMap = new Map();
+
+    // put keys in Array
+    timeStampMap.forEach((value, key, map) => {
+        keys.push(key);
+    });
+
+    //build the new sorted map object
+    keys = keys.sort((a,b) => a -b).map(function(key) {
+        sortedMap.set(key, timeStampMap.get(key));
+    });
+
+    timeStampMap = sortedMap;
+    
+}
