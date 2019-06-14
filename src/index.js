@@ -41,6 +41,7 @@ var EffectProperties = function () {
     this.mouseImageScale = 1.0;
 };
 
+//general vars
 var container;
 var videoElement, playPromise;
 var videoPlaying = false;
@@ -49,19 +50,25 @@ var uniforms;
 var effectProperties = new EffectProperties();
 var gui = new dat.GUI();
 var maskImage, gameImage, mouseImage;
-
-//map with all saved positions
-var timeStampMap = new Map();
-
+//timeline related properties
+var timeStampMap = new Map(); //map with all saved positions
 var timelineState = 0; //0 -> hold | 1 -> play
 var timePassed = 0;
-
+//access DOM elements
 var timeline = document.getElementById("timeline");
 var timeMarker = document.getElementById("timeMarker");
 var label = document.getElementById("label");
 var savepoint = document.getElementById("savepoint");
 var playImg = document.getElementById("play");
 var currentTimeMarker = document.getElementById("currentTimeMarker");
+//video related properties
+var fps = 30;
+var now;
+var thenVideo = Date.now();
+var thenTimeline = Date.now();
+var intervalVideo = 1000 / fps;
+var deltaVideo, deltaTimeline;
+var intervalTimeline = 20;
 
 
 init();
@@ -230,19 +237,10 @@ function init() {
     container.appendChild(renderer.domElement);
 
     UpdateCanvasSize();
-    //onWindowResize();
-    //window.addEventListener( 'resize', onWindowResize, false );
 
     initTimeLine();
 
 }
-
-//deprecated
-// function onWindowResize(event) {
-//     renderer.setSize(window.innerWidth, window.innerHeight);
-//     uniforms.u_resolution.value.x = renderer.domElement.width;
-//     uniforms.u_resolution.value.y = renderer.domElement.height;
-// }
 
 function UpdateCanvasSize() {
 
@@ -258,14 +256,6 @@ function UpdateCanvasSize() {
     uniforms.u_resolution.value.x = effectProperties.canvasWidth * scale;
     uniforms.u_resolution.value.y = effectProperties.canvasHeight * scale;
 }
-
-var fps = 30;
-var now;
-var thenVideo = Date.now();
-var thenTimeline = Date.now();
-var intervalVideo = 1000 / fps;
-var deltaVideo, deltaTimeline;
-var intervalTimeline = 20;
 
 function animate() {
 
@@ -292,7 +282,7 @@ function animate() {
     }
 
     if (deltaVideo > intervalVideo) {
-        //console.log("frame");
+
         thenVideo = now - (deltaVideo % intervalVideo);
         
         if(videoPlaying) {
@@ -306,6 +296,7 @@ function animate() {
             }
         }
     }
+
     render();
 
     if(deltaTimeline > intervalTimeline) { 
@@ -361,7 +352,7 @@ function createNewPoint (width, isFirst = false) {
     createTimeStampDiv(width, isFirst);
     //create new point data
     createTimeStampData(width);
-
+    //sort time stamps from smaller to larger
     sortTimeStampMap();
 }
 
@@ -420,8 +411,9 @@ function createTimeStampDiv (width, isFirst) {
 
     newDiv.appendChild(pointImg);
 
-    //delete icon
+    //do not create delete icon on first timeStamp
     if(!isFirst) {
+        //delete icon
         var pointImgDel = document.createElement('img');
         pointImgDel.setAttribute("src", "../images/remove.png");
         pointImgDel.setAttribute("height", "15");
@@ -554,20 +546,15 @@ function findNextTimeStamp () {
 function sortTimeStampMap () {
     // Initialize your keys array
     var keys = [];
-
     // Initialize your sorted map object
     var sortedMap = new Map();
-
     // put keys in Array
     timeStampMap.forEach((value, key, map) => {
         keys.push(key);
     });
-
     //build the new sorted map object
     keys = keys.sort((a,b) => a -b).map(function(key) {
         sortedMap.set(key, timeStampMap.get(key));
     });
-
     timeStampMap = sortedMap;
-    
 }
