@@ -24,9 +24,10 @@ struct MapBehaviour
     int Tile;
     int Stretch;
     int Center;
+    int None;
 };
 
-const MapBehaviour mapBehaviour = MapBehaviour (1,2,3);
+const MapBehaviour mapBehaviour = MapBehaviour (1,2,3,4);
 
 // All components are in the range [0…1], including hue.
 vec3 rgb2hsv(vec3 c)
@@ -78,6 +79,47 @@ float CalcMouseLayerDist () {
     return brightnessMouse;
 }
 
+vec2 CalcMouseLayerDist2 () {
+
+    vec2 brightnessMouse = vec2(0.0);
+    float pixelBrightness;
+    //if no filter available
+    if(!u_hasMouseFilter) {
+        return brightnessMouse;
+    }
+
+    if(IsInsideMouseArea()) {
+
+        vec2 distanceToMouse = gl_FragCoord.xy - u_mouse;
+
+        //calc pixel coordinates to use on mouse image
+        vec2 pixelCoord = vec2(0.5) + distanceToMouse/u_mouseFilterSize.xy*u_mouseImageScale;
+
+        //find pixel color on mouse image
+        vec4 mouseColor = texture2D(u_mouseImage, pixelCoord, 1.0);
+
+        //calc pixel brightness
+        vec3 mouseHSV = rgb2hsv(vec3(mouseColor.r, mouseColor.g, mouseColor.b));
+
+        pixelBrightness = mouseHSV.z-0.5;
+
+        
+    if(distanceToMouse.x > 0.0) {
+        brightnessMouse.x = pixelBrightness * 0.001*distanceToMouse.x;
+    } else {
+        brightnessMouse.x = - pixelBrightness * 0.001*distanceToMouse.x;
+    }
+    if(distanceToMouse.y > 0.0) {
+        brightnessMouse.y = - pixelBrightness * 0.001*distanceToMouse.y;
+    } else {
+        brightnessMouse.y = - pixelBrightness * 0.001*distanceToMouse.y;
+    }
+    }
+
+    
+    return brightnessMouse;
+}
+
 vec4 CalcMaskColor (vec2 screenUV) {
 
     vec4 maskColor;
@@ -104,7 +146,7 @@ vec4 CalcMaskColor (vec2 screenUV) {
 void main( void ) {
 
     vec4 maskColor;
-    float mouseLayerDistortion;
+    vec2 mouseLayerDistortion;
     float brightness;
     vec3 maskHSV;
     vec2 screenUV, screenUVoffSet;
@@ -118,7 +160,7 @@ void main( void ) {
     screenUV = (gl_FragCoord.xy * u_imageScale - screenUVoffSet ) / u_imageSize.xy;
     
     //distortion caused by mouse filter
-    mouseLayerDistortion = CalcMouseLayerDist();
+    mouseLayerDistortion = CalcMouseLayerDist2();
 
     //find pixel color mask depending on choosen behaviour
     maskColor = CalcMaskColor(screenUV);
@@ -131,7 +173,7 @@ void main( void ) {
     //calculate pixel-to-mimic position
     texturePositionToUse =  screenUV 
                             + vec2(brightness-0.5)*u_displacement
-                            + vec2(mouseLayerDistortion);
+                            + mouseLayerDistortion;
 
     pixelOutsideImage = texturePositionToUse.x > 1.0 || texturePositionToUse.x < 0.0 || texturePositionToUse.y > 1.0 ||  texturePositionToUse.y < 0.0;
 

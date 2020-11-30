@@ -2,7 +2,7 @@ var shader = require("./fragmentShader.glsl");
 
 //type: 1=mask, 2=image, 3=mouse
 var loadTextureForUnifrom = (texture, uniform, type) => {
-  return new THREE.TextureLoader().load(texture, function(texture) {
+  return new THREE.TextureLoader().load(texture, function (texture) {
     uniform.value = texture;
     uniform.needsUpdate = true;
     texture.minFilter = THREE.NearestFilter;
@@ -26,7 +26,7 @@ var loadTextureForUnifrom = (texture, uniform, type) => {
     }
   });
 };
-var EffectProperties = function() {
+var EffectProperties = function () {
   this.MaxHorizontalDisplacement = 0.001;
   this.MaxVerticalDisplacement = 0.001;
   this.imageURL = "https://i.ibb.co/rQkhD97/0.jpg";
@@ -42,7 +42,7 @@ var EffectProperties = function() {
   //this.mouseImageURL ="https://i.ibb.co/PjCRwfv/77113.png";
   //this.mouseImageURL = "https://i.ibb.co/PYC0h8L/cenas.png";
   //this.mouseImageURL = "https://i.ibb.co/jM4P9qY/3d-illustration-grey-gradient-background-gradient-flat-cg1p63961144c-th.jpg";
-  this.mouseImageURL = "https://i.ibb.co/g7tQ4wr/layer-v1.png";
+  this.mouseImageURL = "https://i.ibb.co/z5bDmdq/circle.png";
   this.hasMouseFilter = true;
   this.mouseImageScale = 1.0;
 };
@@ -79,7 +79,7 @@ var intervalTimeline = 20;
 init();
 animate();
 
-window.onload = function() {
+window.onload = function () {
   var shaderGUI = gui.addFolder("Shader");
   var videoGUI = gui.addFolder("Video");
   var canvasGUI = gui.addFolder("Canvas");
@@ -93,14 +93,14 @@ window.onload = function() {
 
   shaderGUI
     .add(effectProperties, "DisplacementMapURL")
-    .onChange(function(value) {
+    .onChange(function (value) {
       maskImage = loadTextureForUnifrom(
         effectProperties.DisplacementMapURL,
         uniforms.u_filter,
         1
       );
     });
-  shaderGUI.add(effectProperties, "imageURL").onChange(function(value) {
+  shaderGUI.add(effectProperties, "imageURL").onChange(function (value) {
     gameImage = loadTextureForUnifrom(
       effectProperties.imageURL,
       uniforms.u_image,
@@ -113,31 +113,36 @@ window.onload = function() {
   shaderGUI
     .add(effectProperties, "MaxVerticalDisplacement", -1.0, 1.0)
     .listen();
-  shaderGUI.add(effectProperties, "wrapPixelsAround").onChange(value => {
+  shaderGUI.add(effectProperties, "wrapPixelsAround").onChange((value) => {
     uniforms.u_wrapPixelsAround.value = value;
   });
   shaderGUI
-    .add(effectProperties, "MapBehaviour", { Tile: 1, Stretch: 2, Center: 3 })
-    .onChange(value => {
+    .add(effectProperties, "MapBehaviour", {
+      Tile: 1,
+      Stretch: 2,
+      Center: 3,
+      None: 4,
+    })
+    .onChange((value) => {
       uniforms.u_mapBehaviour.value = value;
     });
 
-  mouseGUI.add(effectProperties, "mouseImageURL").onChange(function(value) {
+  mouseGUI.add(effectProperties, "mouseImageURL").onChange(function (value) {
     mouseImage = loadTextureForUnifrom(value, uniforms.u_mouseImage, 3);
   });
-  mouseGUI.add(effectProperties, "hasMouseFilter", true).onChange(value => {
+  mouseGUI.add(effectProperties, "hasMouseFilter", true).onChange((value) => {
     uniforms.u_hasMouseFilter.value = value;
   });
 
   mouseGUI
     .add(effectProperties, "mouseImageScale", 0.0, 5.0)
-    .onChange(value => {
+    .onChange((value) => {
       uniforms.u_mouseImageScale.value = 1.0 / value; //TODO remove value
     });
 
   imageGUI
     .add(effectProperties, "imageScale", 1.0, 5.0)
-    .onChange(value => {
+    .onChange((value) => {
       uniforms.u_imageScale.value = 1.0 / value; //TODO remove value
       if (effectProperties.fitCanvasToImage == true) {
         UpdateCanvasSize();
@@ -148,18 +153,18 @@ window.onload = function() {
   var canvasWidthUI = canvasGUI
     .add(effectProperties, "canvasWidth", 10.0, 3840.0)
     .listen()
-    .onChange(value => {
+    .onChange((value) => {
       UpdateCanvasSize();
     });
 
   var canvasHeightUI = canvasGUI
     .add(effectProperties, "canvasHeight", 10.0, 2160.0)
     .listen()
-    .onChange(value => {
+    .onChange((value) => {
       UpdateCanvasSize();
     });
 
-  canvasGUI.add(effectProperties, "fitCanvasToImage").onChange(checked => {
+  canvasGUI.add(effectProperties, "fitCanvasToImage").onChange((checked) => {
     if (checked) {
       effectProperties.canvasHeight = gameImage.image.height;
       effectProperties.canvasWidth = gameImage.image.width;
@@ -172,7 +177,7 @@ window.onload = function() {
     }
   });
 
-  videoGUI.add(effectProperties, "videoAsMask").onChange(value => {
+  videoGUI.add(effectProperties, "videoAsMask").onChange((value) => {
     if (value == false) {
       maskImage = loadTextureForUnifrom(
         effectProperties.DisplacementMapURL,
@@ -183,7 +188,7 @@ window.onload = function() {
       videoPlaying = false;
     }
   });
-  videoGUI.add(effectProperties, "videoAsImage").onChange(value => {
+  videoGUI.add(effectProperties, "videoAsImage").onChange((value) => {
     if (value == false) {
       gameImage = loadTextureForUnifrom(
         effectProperties.imageURL,
@@ -196,7 +201,7 @@ window.onload = function() {
   });
 };
 
-document.onmousemove = function(e) {
+document.onmousemove = function (e) {
   uniforms.u_mouse.value.x = e.pageX;
   //canvas and glsl coordinates have different pivot points
   uniforms.u_mouse.value.y = uniforms.u_resolution.value.y - e.pageY;
@@ -218,7 +223,7 @@ function init() {
     u_displacement: { type: "v2", value: new THREE.Vector2() },
     u_wrapPixelsAround: {
       type: "bool",
-      value: effectProperties.wrapPixelsAround
+      value: effectProperties.wrapPixelsAround,
     },
     u_image: { type: "sampler2D", value: null },
     u_filter: { type: "sampler2D", value: null },
@@ -230,7 +235,7 @@ function init() {
     u_mouse: { type: "v2", value: new THREE.Vector2() },
     u_mouseFilterSize: { type: "v2", value: new THREE.Vector2() },
     u_hasMouseFilter: { type: "bool", value: effectProperties.hasMouseFilter },
-    u_mouseImageScale: { type: "1f", value: 1.0 }
+    u_mouseImageScale: { type: "1f", value: 1.0 },
   };
 
   uniforms.u_displacement.value.x = 0.1;
@@ -258,6 +263,8 @@ function init() {
   //gameImage = new THREE.TextureLoader().load( text.imageURL );
   //MAN IMAGE https://i.ibb.co/h1pZRzR/Capture.png
   //MOUSE IMAGE: https://i.ibb.co/B2Dbjch/77113.jpg
+  //CIRLE IMAGE: https://i.ibb.co/z5bDmdq/circle.png
+  //DIPLACEMENT EXAMPLE: https://i.ibb.co/g7tQ4wr/layer-v1.png
   mouseImage = loadTextureForUnifrom(
     effectProperties.mouseImageURL,
     uniforms.u_mouseImage,
@@ -270,7 +277,7 @@ function init() {
   var material = new THREE.ShaderMaterial({
     uniforms: uniforms,
     //vertexShader: document.getElementById( 'vertexShader' ).textContent, //vertex
-    fragmentShader: shader //pixel
+    fragmentShader: shader, //pixel
   });
 
   //testing purpose
@@ -319,7 +326,7 @@ function animate() {
 
   if (playPromise !== undefined && !videoPlaying) {
     playPromise
-      .then(function() {
+      .then(function () {
         videoPlaying = true;
         videoElement.play();
         if (effectProperties.videoAsImage) {
@@ -329,7 +336,7 @@ function animate() {
           maskImage = new THREE.VideoTexture(videoElement);
         }
       })
-      .catch(function(error) {
+      .catch(function (error) {
         //TODO: add an UI to manual playing
         console.log("play not ready");
       });
@@ -370,26 +377,26 @@ function render() {
 var timelinePosition = 0;
 
 //create new point
-line.onmousedown = function(e) {
+line.onmousedown = function (e) {
   timelinePosition = event.clientX;
   timeMarker.style.left = event.clientX + "px";
   UpdatePreviewShaderParamenters(timelinePosition);
 };
 
 //show time label
-timeline.onmousemove = function(e) {
+timeline.onmousemove = function (e) {
   label.hidden = false;
   label.style.left = e.clientX + "px";
   label.innerHTML = e.clientX;
 };
 
 //hide time label
-timeline.onmouseleave = function(e) {
+timeline.onmouseleave = function (e) {
   label.hidden = true;
 };
 
 //clicking on "SAVE"
-savepoint.onmousedown = function(e) {
+savepoint.onmousedown = function (e) {
   createNewPoint(timelinePosition);
 };
 
@@ -433,7 +440,7 @@ function createTimeStampData(timeStamp) {
   var timeStampData = {
     displacementX: effectProperties.MaxHorizontalDisplacement,
     displacementY: effectProperties.MaxVerticalDisplacement,
-    imageScale: effectProperties.imageScale
+    imageScale: effectProperties.imageScale,
   };
   timeStampMap.set(timeStamp, timeStampData);
 }
@@ -486,7 +493,7 @@ function createTimeStampDiv(width, isFirst) {
   return newDiv;
 }
 
-playImg.onmousedown = function(e) {
+playImg.onmousedown = function (e) {
   if (timelineState == 0) {
     console.log("playing");
     timelineState = 1;
@@ -615,7 +622,7 @@ function sortTimeStampMap() {
   //build the new sorted map object
   keys = keys
     .sort((a, b) => a - b)
-    .map(function(key) {
+    .map(function (key) {
       sortedMap.set(key, timeStampMap.get(key));
     });
   timeStampMap = sortedMap;
