@@ -42,7 +42,7 @@ var EffectProperties = function () {
   //this.mouseImageURL ="https://i.ibb.co/PjCRwfv/77113.png";
   //this.mouseImageURL = "https://i.ibb.co/PYC0h8L/cenas.png";
   //this.mouseImageURL = "https://i.ibb.co/jM4P9qY/3d-illustration-grey-gradient-background-gradient-flat-cg1p63961144c-th.jpg";
-  this.mouseImageURL = "https://i.ibb.co/z5bDmdq/circle.png";
+  this.mouseImageURL = "https://i.ibb.co/dk1bCqd/circle2.png";
   this.hasMouseFilter = true;
   this.mouseImageScale = 1.0;
 };
