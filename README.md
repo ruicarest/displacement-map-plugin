@@ -4,7 +4,7 @@ Displacement map filter implementation using WebGL/GLSL.
 Playground available, just start the app by running on the project root the cmd
 `npm run server` 
 
-On the playground the dat-gui interface is divided by fitler category options such as,
+On the playground, the dat-gui interface is divided by filter category options such as,
 
 - `Shader`:
   - `imageURL`: change background image;
